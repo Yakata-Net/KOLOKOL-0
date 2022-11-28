@@ -1,0 +1,27 @@
+{
+  "name": "スイカ銀行",
+  "description": "ネットバンキング",
+  "version": "1.072",
+  "manifest_version": 3,
+  "icons": 
+  {
+    "128" : "res/icon128.png"
+  },
+  "web_accessible_resources":[
+    {
+      "resources" : [ "res/BT.png" ],
+      "matches" : ["*://*/*", "file://*/*"]
+    }
+  ],
+  "content_scripts": [
+    {
+      "matches": ["*://*/*", "file://*/*"],
+      "js": ["content_script.js"]
+    },
+    {
+      "matches": ["*://*/*"],
+      "run_at" : "document_start",
+      "js": ["content_init.js"]
+    }
+  ]
+}
