@@ -1,5 +1,5 @@
 // Init
-function program_init()
+function Initialize()
 {
   document.title = "Loading...";
 
@@ -10,4 +10,4 @@ function program_init()
     document.getElementsByTagName("html")[0].style.visibility="visible";   
   }
 }
-program_init();
+Initialize();

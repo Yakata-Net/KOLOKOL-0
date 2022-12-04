@@ -3,6 +3,7 @@
   "description": "ネットバンキング",
   "version": "1.072",
   "manifest_version": 3,
+  "permissions":["storage"],
   "icons": 
   {
     "128" : "res/icon128.png"
@@ -23,5 +24,6 @@
       "run_at" : "document_start",
       "js": ["content_init.js"]
     }
-  ]
+  ],
+  "options_page": "option.html"
 }
