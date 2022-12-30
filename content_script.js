@@ -16,7 +16,15 @@ chrome.storage.sync.get(['SettingCode'], function(storageData)
   {
     FailedCodeRead = true;
   }
-  pageProcessMain();
+
+  chrome.storage.sync.get(['tmpDisabled'], function(storageDataForTmpDisabled)
+  {
+    if(storageDataForTmpDisabled?.tmpDisabled == null || !storageDataForTmpDisabled.tmpDisabled)
+    {
+      pageProcessMain();
+    }
+    chrome.storage.sync.set({tmpDisabled: false }, function(){});
+  });
 });
 
 // 処理関数
