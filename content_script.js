@@ -59,9 +59,12 @@ function hrefProcess(childNode)
   if(childNode.href == null) {return};
 
   let beforeHref = decodeURI(childNode.href)
-  let afterHref  = processText(beforeHref);
-  childNode.href = encodeURI(afterHref);
-  processedCount++;
+  if(C_Code.test(beforeHref))
+  {
+    let afterHref  = processText(beforeHref);
+    childNode.href = encodeURI(afterHref);
+    processedCount++;
+  }
 }
 
 // Main Function
