@@ -53,12 +53,23 @@ function imageProcess(childNode)
     processedCount++;
   }
 }
+// リンク処理
+function hrefProcess(childNode)
+{
+  if(childNode.href == null) {return};
+
+  let beforeHref = decodeURI(childNode.href)
+  let afterHref  = processText(beforeHref);
+  childNode.href = encodeURI(afterHref);
+  processedCount++;
+}
 
 // Main Function
 function documentRecursiveScan(Node){
   Array.from(Node.childNodes).forEach(childNode => 
   {
     imageProcess(childNode);
+    hrefProcess(childNode);
     if(childNode.nodeType == Node.TEXT_NODE){ childNode.textContent = processText(childNode.textContent); }
     else{ documentRecursiveScan(childNode); }
   });
