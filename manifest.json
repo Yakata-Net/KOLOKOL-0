@@ -1,7 +1,7 @@
 {
   "name": "スイカ銀行",
   "description": "ネットバンキング",
-  "version": "1.21",
+  "version": "1.211",
   "manifest_version": 3,
   "permissions":["storage"],
   "icons": 

@@ -66,6 +66,16 @@ function hrefProcess(childNode)
     processedCount++;
   }
 }
+function titleProcess(childNode)
+{
+  if(childNode.title == null) {return};
+
+  if(C_Code.test(childNode.title))
+  {
+    childNode.title = processText(childNode.title);
+    processedCount++;
+  }
+}
 
 // Main Function
 function documentRecursiveScan(Node){
@@ -73,6 +83,7 @@ function documentRecursiveScan(Node){
   {
     imageProcess(childNode);
     hrefProcess(childNode);
+    titleProcess(childNode);
     if(childNode.nodeType == Node.TEXT_NODE){ childNode.textContent = processText(childNode.textContent); }
     else{ documentRecursiveScan(childNode); }
   });
