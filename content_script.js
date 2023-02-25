@@ -98,20 +98,6 @@ function titleProcess(childNode)
     }
   }
 }
-function titleProcess(childNode)
-{
-  if(childNode.title == null) {return};
-
-  for(let i = 0; i < CodeList.length; i++)
-  {
-    let c_Code = new RegExp(CodeList[i], 'g');
-    if(c_Code.test(childNode.title))
-    {
-      childNode.title = processText(childNode.title);
-      processedCount++;
-    }
-  }
-}
 
 // Main Function
 function documentRecursiveScan(Node){
