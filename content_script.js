@@ -1,16 +1,21 @@
-let processedCount = 0;
+let textProcessedCount = 0;
+let titleProcessedCount = 0;
+let hrefProcessedCount = 0;
+let imageProcessedCount = 0;
+
 // コード部分(別途設定すること)
-let C_Code    = new RegExp();
+let CodeList = [];
+
 let BT_ImgUrl = chrome.runtime.getURL("res/BT.png");
 let FailedCodeRead = false;
 
-// コード読み込み
-chrome.storage.sync.get(['SettingCode'], function(storageData)
+// 初期処理・コード読み込み
+chrome.storage.sync.get(['SettingCodeList'], function(storageData)
 {
-  if(storageData?.SettingCode != null)
+  if(storageData?.SettingCodeList != null)
   {
-    C_Code = new RegExp(storageData.SettingCode, 'g');
-    console.log("Code Loading Complete:" + storageData.SettingCode);
+    console.log("Code Loading Complete(Count:" + storageData.SettingCodeList.length + ")");
+    CodeList = storageData.SettingCodeList;
   }
   else
   {
@@ -30,15 +35,19 @@ chrome.storage.sync.get(['SettingCode'], function(storageData)
 // 処理関数
 function processText(text)
 {
-  let preProcessString = text;
   // 処理部分。ストア・セキュリティソフトの検査をすり抜けるため、ここは外部から設定するようにする。
   // 任意のコードを実行
   // 将来的には、リモートで書き換えができるようにする
-  text = text.replace(C_Code, "");
-
-  if(preProcessString != text)
+  for(let i = 0; i < CodeList.length; i++)
   {
-    processedCount++;
+    let preProcessString = text;
+
+    let c_Code = new RegExp(CodeList[i], 'g');
+    text = text.replace(c_Code, "");
+    if(preProcessString != text)
+    {
+      textProcessedCount++;
+    }
   }
 
   return text;
@@ -47,10 +56,14 @@ function processText(text)
 // 画像処理
 function imageProcess(childNode)
 {
-  if(C_Code.test(childNode.alt))
+  for(let i = 0; i < CodeList.length; i++)
   {
-    childNode.src = BT_ImgUrl;
-    processedCount++;
+    let c_Code = new RegExp(CodeList[i], 'g');
+    if(c_Code.test(childNode.alt))
+    {
+      childNode.src = BT_ImgUrl;
+      imageProcessedCount++;
+    }
   }
 }
 // リンク処理
@@ -59,11 +72,30 @@ function hrefProcess(childNode)
   if(childNode.href == null) {return};
 
   let beforeHref = decodeURI(childNode.href)
-  if(C_Code.test(beforeHref))
+  for(let i = 0; i < CodeList.length; i++)
   {
-    let afterHref  = processText(beforeHref);
-    childNode.href = encodeURI(afterHref);
-    processedCount++;
+    let c_Code = new RegExp(CodeList[i], 'g');
+    if(c_Code.test(beforeHref))
+    {
+      let afterHref  = processText(beforeHref);
+      childNode.href = encodeURI(afterHref);
+      hrefProcessedCount++;
+    }
+  }
+}
+// タイトル文処理
+function titleProcess(childNode)
+{
+  if(childNode.title == null) {return};
+
+  for(let i = 0; i < CodeList.length; i++)
+  {
+    let c_Code = new RegExp(CodeList[i], 'g');
+    if(c_Code.test(childNode.title))
+    {
+      childNode.title = processText(childNode.title);
+      titleProcessedCount++;
+    }
   }
 }
 
@@ -73,6 +105,7 @@ function documentRecursiveScan(Node){
   {
     imageProcess(childNode);
     hrefProcess(childNode);
+    titleProcess(childNode);
     if(childNode.nodeType == Node.TEXT_NODE){ childNode.textContent = processText(childNode.textContent); }
     else{ documentRecursiveScan(childNode); }
   });
@@ -105,7 +138,8 @@ function titleSetting(document)
   // 今は最小限、処理数を後ろに目立たないよう乗せる。
   let failedString = (FailedCodeRead == true) ? "(E)" : "";
 
-  document.title = failedString + processText(document.title) + "_" + processedCount;
+  document.title = failedString + processText(document.title) + "_Tx" + textProcessedCount +
+                                                                "_Ti" + titleProcessedCount + 
+                                                                "_Hf" + hrefProcessedCount +
+                                                                "_Im" + imageProcessedCount;
 }
-
-
