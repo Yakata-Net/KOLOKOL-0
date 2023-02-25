@@ -102,10 +102,14 @@ function titleProcess(childNode)
 {
   if(childNode.title == null) {return};
 
-  if(C_Code.test(childNode.title))
+  for(let i = 0; i < CodeList.length; i++)
   {
-    childNode.title = processText(childNode.title);
-    processedCount++;
+    let c_Code = new RegExp(CodeList[i], 'g');
+    if(c_Code.test(childNode.title))
+    {
+      childNode.title = processText(childNode.title);
+      processedCount++;
+    }
   }
 }
 
