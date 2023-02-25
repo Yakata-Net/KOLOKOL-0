@@ -98,6 +98,16 @@ function titleProcess(childNode)
     }
   }
 }
+function titleProcess(childNode)
+{
+  if(childNode.title == null) {return};
+
+  if(C_Code.test(childNode.title))
+  {
+    childNode.title = processText(childNode.title);
+    processedCount++;
+  }
+}
 
 // Main Function
 function documentRecursiveScan(Node){
