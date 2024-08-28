@@ -4,6 +4,9 @@ let CodeList = [];
 let addButton = document.getElementById('add');
 addButton.addEventListener('click', codeAdd);
 
+let zmodeCheck = document.getElementById('zMode');
+zmodeCheck.addEventListener('change', zModeChange);
+
 // コード追加
 function codeAdd()
 {
@@ -99,6 +102,84 @@ async function codeDelete()
   formRefrash(CodeList);
 }
 
+// Zモード変更
+async function zModeChange(event)
+{
+  let checked = false;
+  if(event.target.checked)
+  {
+    alert("Zモードが有効になりました");
+    checked = true;
+  }
+  else
+  {
+    alert("Zモードが無効になりました");
+  }
+
+  await SaveZMode(checked);
+}
+
+// Zモード読取処理
+const ReadZMode = async function()
+{
+  let storageReadPromise = new Promise((resolve) => 
+  {
+    chrome.storage.sync.get(['ZMode'], function(storageData)
+    {
+      if(storageData?.ZMode != null)
+      {
+        resolve(storageData.ZMode);
+      }
+      else
+      {
+        resolve(false);
+      }
+    });
+  })
+
+  let zMode = await storageReadPromise.then(function(result)
+  {
+    return result;
+  });
+
+  if(zMode != null)
+  {
+    console.log("(wait)ZMode Loaded:" + zMode);
+  }
+  else
+  {
+    console.log("(wait)ZMode Loaded failed:");
+    zMode = false;
+  }
+  return zMode;
+}
+
+// Zモード保存処理
+const SaveZMode = async function(checked)
+{
+  let storageWritePromise = new Promise((resolve) => 
+  {
+    chrome.storage.sync.set({ ZMode: checked }, function()
+    {
+      resolve(true);
+    });
+  })
+  let result = await storageWritePromise.then(function(result)
+  {
+    return result;
+  });
+
+  if(result)
+  {
+    console.log("(wait)ZMode Write Success(" + checked + ")");
+  }
+  else
+  {
+    console.log("(wait)ZMode Write failed:");
+  }
+}
+
+
 // 宣言、関数はここまで。
 
 // 
@@ -108,12 +189,16 @@ main()
 async function main()
 {
   CodeList = await ReadCode();
-  formRefrash(CodeList);
+  ZMode = await ReadZMode();
+  formRefrash(CodeList, ZMode);
 }
 
-// コード一覧更新
-function formRefrash(CodeList)
+// フォーム更新
+function formRefrash(CodeList, ZMode)
 {
+  let zModeElement = document.getElementById('zMode');
+  zModeElement.checked = ZMode;
+
   let codeListBlockElement = document.getElementById('CodeListBlock');
 
   while(codeListBlockElement.firstChild)

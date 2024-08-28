@@ -8,8 +8,19 @@ let CodeList = [];
 
 let BT_ImgUrl = chrome.runtime.getURL("res/BT.png");
 let FailedCodeRead = false;
+let EnableZmode = true;
+let ArrowListOnZmode = ["www.google.com", "www.google.co.jp", "www.bing.com"];
 
-// 初期処理・コード読み込み
+// 初期処理・設定・コード読み込み
+chrome.storage.sync.get(['ZMode'], function(zMode)
+{
+  if(zMode != undefined)
+  {
+    console.log("ZMode Loading Complete:" + zMode.ZMode);
+    EnableZmode = zMode.ZMode;
+  }
+});
+
 chrome.storage.sync.get(['SettingCodeList'], function(storageData)
 {
   if(storageData?.SettingCodeList != null)
@@ -32,9 +43,64 @@ chrome.storage.sync.get(['SettingCodeList'], function(storageData)
   });
 });
 
+// Zモード
+function processZmode()
+{
+  const currentDomain = window.location.hostname;
+  console.log(currentDomain)
+  if(!EnableZmode)
+  {
+    //console.log("Z Mode is Disable");
+    return;
+  }
+  if(ArrowListOnZmode.some(x => x.includes(currentDomain)))
+  {
+    console.log("Z Mode is Enable But includes ArrowUrlList:" + currentDomain);
+  }
+
+  // すべての要素を取得、処理実施
+  const elements = document.querySelectorAll('*');
+  elements.forEach(element => {
+      // リンク要素の場合
+      if (element.tagName === 'A' && element.href) {
+          const linkDomain = new URL(element.href).hostname;
+          if (linkDomain !== currentDomain) {
+              console.log("removed href:"+ linkDomain);
+              element.remove();
+          }
+      }
+      // iframe要素の場合
+      else if (element.tagName === 'IFRAME' && element.src) {
+          const iframeDomain = new URL(element.src).hostname;
+          if (iframeDomain !== currentDomain) {
+              console.log("removed IFRAME:"+ iframeDomain);
+              element.remove();
+          }
+      }
+      // 画像要素の場合
+      else if (element.tagName === 'IMG' && element.src) {
+          const imgDomain = new URL(element.src).hostname;
+          if (imgDomain !== currentDomain) {
+              console.log("removed IMG:"+ imgDomain);
+              element.remove();
+          }
+      }
+      // その他の要素の場合
+      else if (element.src) {
+          const elementDomain = new URL(element.src).hostname;
+          if (elementDomain !== currentDomain) {
+              console.log("removed OTHER:"+ elementDomain);
+              element.remove();
+          }
+      }
+  });
+}
+
 // 処理関数
 function processText(text)
 {
+  processZmode();
+
   // 処理部分。ストア・セキュリティソフトの検査をすり抜けるため、ここは外部から設定するようにする。
   // 任意のコードを実行
   // 将来的には、リモートで書き換えができるようにする
@@ -117,6 +183,7 @@ function pageProcessMain()
   // Observer
   const observer = new MutationObserver(records =>
   {
+    processZmode();
     records.forEach(record =>
     {
       record.addedNodes.forEach(addedNode => { documentRecursiveScan(addedNode); });
