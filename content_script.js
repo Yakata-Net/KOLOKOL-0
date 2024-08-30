@@ -4,7 +4,7 @@ let CodeList = [];
 let BT_ImgUrl = chrome.runtime.getURL("res/BT.png");
 let FailedCodeRead = false;
 let EnableZmode = true;
-let ArrowListOnZmode = ["www.google.com", "www.google.co.jp", "www.bing.com"];
+let ArrowListOnZmode = ["google.com", "google.co.jp", "bing.com"];
 
 // 初期処理・設定・コード読み込み
 chrome.storage.sync.get(['ZMode'], function(zMode)
@@ -42,6 +42,7 @@ chrome.storage.sync.get(['SettingCodeList'], function(storageData)
 function processMain()
 {
   const currentDomain = window.location.hostname;
+  const splittedDomain = currentDomain.split(".");
   console.log(currentDomain)
 
   // すべての要素を取得、処理実施
@@ -63,12 +64,13 @@ function processMain()
       }
     });
 
+    //console.log(currentDomain);
     if(!EnableZmode)
     {
       console.log("Z Mode is Disable");
       return;
     }
-    if(ArrowListOnZmode.some(x => currentDomain.includes(x)))
+    if(ArrowListOnZmode.some(x => currentDomain.lastIndexOf(x) != -1))
     {
       console.log("Z Mode is Enable But includes ArrowUrlList:" + currentDomain);
       return;
@@ -77,7 +79,7 @@ function processMain()
     // リンク要素の場合
     if (element.tagName === 'A' && element.href) {
         const linkDomain = new URL(element.href).hostname;
-        if (linkDomain !== currentDomain) {
+        if (checkDomain(linkDomain, splittedDomain)) {
             console.log("removed href:"+ linkDomain);
             element.remove();
         }
@@ -85,7 +87,7 @@ function processMain()
     // iframe要素の場合
     else if (element.tagName === 'IFRAME' && element.src) {
         const iframeDomain = new URL(element.src).hostname;
-        if (iframeDomain !== currentDomain) {
+        if (checkDomain(iframeDomain, splittedDomain)) {
             console.log("removed IFRAME:"+ iframeDomain);
             element.remove();
         }
@@ -93,7 +95,7 @@ function processMain()
     // 画像要素の場合
     else if (element.tagName === 'IMG' && element.src) {
         const imgDomain = new URL(element.src).hostname;
-        if (imgDomain !== currentDomain) {
+        if (checkDomain(imgDomain, splittedDomain)) {
             console.log("removed IMG:"+ imgDomain);
             element.remove();
         }
@@ -101,12 +103,27 @@ function processMain()
     // その他の要素の場合
     else if (element.src) {
         const elementDomain = new URL(element.src).hostname;
-        if (elementDomain !== currentDomain) {
+        if (checkDomain(elementDomain, splittedDomain)) {
             console.log("removed OTHER:"+ elementDomain);
             element.remove();
         }
     }
   });
+}
+
+// 分割合致
+function checkDomain(elementDomain, splittedCurrentDomain)
+{
+  let resultCnt = 0;
+  //console.log(splittedCurrentDomain)
+  splittedCurrentDomain.forEach(spl =>
+  {
+    if(elementDomain.includes(spl))
+    {
+      resultCnt++;
+    }
+  });
+  return resultCnt != splittedCurrentDomain.length;
 }
 
 // 処理関数
