@@ -5,6 +5,8 @@ let BT_ImgUrl = chrome.runtime.getURL("res/BT.png");
 let FailedCodeRead = false;
 let EnableZmode = true;
 let ArrowListOnZmode = ["google.com", "google.co.jp", "bing.com"];
+const LocalAddresses = ["127.0.0", "localhost"]; 
+const Mos = "▓░▓▓░░▓▓▒░▓▓░▒▓░░▒";
 
 // 初期処理・設定・コード読み込み
 chrome.storage.sync.get(['ZMode'], function(zMode)
@@ -43,6 +45,7 @@ function processMain()
 {
   const currentDomain = window.location.hostname;
   const splittedDomain = currentDomain.split(".");
+  splittedDomain.filter(x => x != "www");
   console.log(currentDomain)
 
   // すべての要素を取得、処理実施
@@ -67,12 +70,17 @@ function processMain()
     //console.log(currentDomain);
     if(!EnableZmode)
     {
-      console.log("Z Mode is Disable");
+      //console.log("Z Mode is Disable");
       return;
     }
     if(ArrowListOnZmode.some(x => currentDomain.lastIndexOf(x) != -1))
     {
-      console.log("Z Mode is Enable But includes ArrowUrlList:" + currentDomain);
+      //console.log("Z Mode is Enable But includes ArrowUrlList:" + currentDomain);
+      return;
+    }
+    if(LocalAddresses.some(x => currentDomain.includes(x)))
+    {
+      console.log("Z Mode is Enable But LocalAddress:" + currentDomain);
       return;
     }
     
@@ -81,7 +89,7 @@ function processMain()
         const linkDomain = new URL(element.href).hostname;
         if (checkDomain(linkDomain, splittedDomain)) {
             console.log("removed href:"+ linkDomain);
-            element.remove();
+            element.text = Mos;
         }
     }
     // iframe要素の場合
@@ -89,7 +97,8 @@ function processMain()
         const iframeDomain = new URL(element.src).hostname;
         if (checkDomain(iframeDomain, splittedDomain)) {
             console.log("removed IFRAME:"+ iframeDomain);
-            element.remove();
+            element.text = Mos;
+            //element.remove();
         }
     }
     // 画像要素の場合
@@ -97,7 +106,8 @@ function processMain()
         const imgDomain = new URL(element.src).hostname;
         if (checkDomain(imgDomain, splittedDomain)) {
             console.log("removed IMG:"+ imgDomain);
-            element.remove();
+            element.src = BT_ImgUrl;
+            element.alt = Mos;
         }
     }
     // その他の要素の場合
@@ -105,7 +115,8 @@ function processMain()
         const elementDomain = new URL(element.src).hostname;
         if (checkDomain(elementDomain, splittedDomain)) {
             console.log("removed OTHER:"+ elementDomain);
-            element.remove();
+            element.text = Mos;
+            //element.remove();
         }
     }
   });
@@ -115,6 +126,11 @@ function processMain()
 function checkDomain(elementDomain, splittedCurrentDomain)
 {
   let resultCnt = 0;
+  if(elementDomain.includes("img") || elementDomain.includes("image"))
+  {
+    return false;
+  }
+
   //console.log(splittedCurrentDomain)
   splittedCurrentDomain.forEach(spl =>
   {
