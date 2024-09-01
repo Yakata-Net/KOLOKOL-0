@@ -6,7 +6,6 @@ let FailedCodeRead = false;
 let EnableZmode = true;
 let ArrowListOnZmode = ["google.com", "google.co.jp", "bing.com"];
 const LocalAddresses = ["127.0.0", "localhost"]; 
-const Mos = "▓░▓▓░░▓▓▒░▓▓░▒▓░░▒";
 
 // 初期処理・設定・コード読み込み
 chrome.storage.sync.get(['ZMode'], function(zMode)
@@ -44,13 +43,15 @@ chrome.storage.sync.get(['SettingCodeList'], function(storageData)
 function processMain()
 {
   const currentDomain = window.location.hostname;
-  const splittedDomain = currentDomain.split(".");
-  splittedDomain.filter(x => x != "www");
-  console.log(currentDomain)
+  let splittedDomain = currentDomain.split(".");
+  splittedDomain = splittedDomain.filter(x => x != "www");
+  console.log(currentDomain);
 
   // すべての要素を取得、処理実施
   const elements = document.querySelectorAll('*');
   
+  const Mos = "▒";
+
   elements.forEach(element =>
   {
     // 画像・テキスト処理
@@ -89,7 +90,8 @@ function processMain()
         const linkDomain = new URL(element.href).hostname;
         if (checkDomain(linkDomain, splittedDomain)) {
             console.log("removed href:"+ linkDomain);
-            element.text = Mos;
+            let pre = element.text;
+            element.text =  Mos.repeat(pre.length);
         }
     }
     // iframe要素の場合
@@ -97,8 +99,7 @@ function processMain()
         const iframeDomain = new URL(element.src).hostname;
         if (checkDomain(iframeDomain, splittedDomain)) {
             console.log("removed IFRAME:"+ iframeDomain);
-            element.text = Mos;
-            //element.remove();
+            element.remove();
         }
     }
     // 画像要素の場合
@@ -107,7 +108,8 @@ function processMain()
         if (checkDomain(imgDomain, splittedDomain)) {
             console.log("removed IMG:"+ imgDomain);
             element.src = BT_ImgUrl;
-            element.alt = Mos;
+            let pre = element.alt;
+            element.alt =  Mos.repeat(pre.length);
         }
     }
     // その他の要素の場合
@@ -115,7 +117,8 @@ function processMain()
         const elementDomain = new URL(element.src).hostname;
         if (checkDomain(elementDomain, splittedDomain)) {
             console.log("removed OTHER:"+ elementDomain);
-            element.text = Mos;
+            let pre = element.text;
+            element.text =  Mos.repeat(pre.length);
             //element.remove();
         }
     }
