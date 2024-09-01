@@ -99,9 +99,7 @@ function processMain()
         const iframeDomain = new URL(element.src).hostname;
         if (checkDomain(iframeDomain, splittedDomain)) {
             console.log("removed IFRAME:"+ iframeDomain);
-            let pre = element.text;
-            element.text =  Mos.repeat(pre.length);
-            //element.remove();
+            element.remove();
         }
     }
     // 画像要素の場合
