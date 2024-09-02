@@ -251,6 +251,8 @@ function pageProcessMain()
   const observer = new MutationObserver(records =>
   {
     let elements = document.querySelectorAll('*');
+    /*
+    // (秋子へ)暫定。下記コードだと必要な隠ぺい処理が不可能。解決策見つかるまで↑コードで全部処理させる
     let elementList = [];
     for(const record of records)
     {
@@ -260,6 +262,7 @@ function pageProcessMain()
         elementList.push(addedNode);
       }
     }
+    */
     //console.log(elementList);
 
     processMain(elements, zMode);
