@@ -58,56 +58,73 @@ function processElement(targetelement, splittedCurrentDomain, zMode)
   // 画像・テキスト処理
   //console.log(element.textContent);
   targetelement.childNodes.forEach(childNode =>
+  {
+    imageProcess(childNode);
+    hrefProcess(childNode);
+    titleProcess(childNode);
+
+    if(childNode.nodeType == Node.TEXT_NODE)
     {
-      imageProcess(childNode);
-      hrefProcess(childNode);
-      titleProcess(childNode);
-
-      if(childNode.nodeType == Node.TEXT_NODE)
-      {
-        childNode.textContent = processText(childNode.textContent);
-      }
-    });
+      childNode.textContent = processText(childNode.textContent);
+    }
+  });
     
-    if(!zMode) return;
+  if(!zMode) return;
 
-    // リンク要素の場合
-    if (targetelement.tagName === 'A' && targetelement.href) {
-        const linkDomain = new URL(targetelement.href).hostname;
-        if (checkDomain(linkDomain, splittedCurrentDomain)) {
-            console.log("removed href:"+ linkDomain);
-            let pre = targetelement.text;
-            targetelement.text =  Mos.repeat(pre.length);
-        }
+  // リンク要素の場合
+  if (targetelement.tagName === 'A' && targetelement.href)
+  {
+    const linkDomain = new URL(targetelement.href).hostname;
+    if (checkDomain(linkDomain, splittedCurrentDomain))
+    {
+      console.log("removed href:"+ linkDomain);
+      let pre = targetelement.text;
+      targetelement.text =  Mos.repeat(pre.length);
     }
-    // iframe要素の場合
-    else if (targetelement.tagName === 'IFRAME' && targetelement.src) {
-        const iframeDomain = new URL(targetelement.src).hostname;
-        if (checkDomain(iframeDomain, splittedCurrentDomain)) {
-            console.log("removed IFRAME:"+ iframeDomain);
-            targetelement.remove();
-        }
+  }
+  // iframe要素の場合
+  else if (targetelement.tagName === 'IFRAME' && targetelement.src)
+  {
+    const iframeDomain = new URL(targetelement.src).hostname;
+    if (checkDomain(iframeDomain, splittedCurrentDomain))
+    {
+      console.log("removed IFRAME:"+ iframeDomain);
+      targetelement.remove();
     }
-    // 画像要素の場合
-    else if (targetelement.tagName === 'IMG' && targetelement.src) {
-        const imgDomain = new URL(targetelement.src).hostname;
-        if (checkDomain(imgDomain, splittedCurrentDomain)) {
-            console.log("removed IMG:"+ imgDomain);
-            targetelement.src = BT_ImgUrl;
-            let pre = targetelement.alt;
-            targetelement.alt =  Mos.repeat(pre.length);
-        }
+  }
+  // 画像要素の場合
+  else if (targetelement.tagName === 'IMG' && targetelement.src)
+  {
+    const imgDomain = new URL(targetelement.src).hostname;
+    if (checkDomain(imgDomain, splittedCurrentDomain))
+    {
+      console.log("removed IMG:"+ imgDomain);
+      targetelement.src = BT_ImgUrl;
+      let pre = targetelement.alt;
+      targetelement.alt =  Mos.repeat(pre.length);
     }
-    // その他の要素の場合
-    else if (targetelement.src) {
-        const elementDomain = new URL(targetelement.src).hostname;
-        if (checkDomain(elementDomain, splittedCurrentDomain)) {
-            console.log("removed OTHER:"+ elementDomain);
-            let pre = targetelement.text;
-            targetelement.text =  Mos.repeat(pre.length);
-            //element.remove();
-        }
+  }
+  // その他の要素の場合
+  else if (targetelement.src)
+  {
+    const elementDomain = new URL(targetelement.src).hostname;
+    if (checkDomain(elementDomain, splittedCurrentDomain))
+    {
+      console.log("removed OTHER:"+ elementDomain);
+      if(targetelement.text)
+      {
+        let pre = targetelement.text;
+        targetelement.text =  Mos.repeat(pre.length);
+        //element.remove();
+      }
+      else
+      {
+        // fail safe
+        console.log("removed OTHER but text is None"+ elementDomain);
+        targetelement.remove();
+      }
     }
+  }
 }
 
 // 分割合致
@@ -234,6 +251,17 @@ function pageProcessMain()
   const observer = new MutationObserver(records =>
   {
     let elements = document.querySelectorAll('*');
+    let elementList = [];
+    for(const record of records)
+    {
+      elementList.push(record.target);
+      for(const addedNode of record.addedNodes)
+      {
+        elementList.push(addedNode);
+      }
+    }
+    //console.log(elementList);
+
     processMain(elements, zMode);
   });
 
