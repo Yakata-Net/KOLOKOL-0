@@ -4,8 +4,12 @@ let CodeList = [];
 let BT_ImgUrl = chrome.runtime.getURL("res/BT.png");
 let FailedCodeRead = false;
 let EnableZmode = true;
-let ArrowListOnZmode = ["google.com", "google.co.jp", "bing.com"];
+let CurrentDomain = "";
+let SplittedDomain = [];
+
+const ArrowListOnZmode = ["google.com", "google.co.jp", "bing.com"];
 const LocalAddresses = ["127.0.0", "localhost"]; 
+const Mos = "▒";
 
 // 初期処理・設定・コード読み込み
 chrome.storage.sync.get(['ZMode'], function(zMode)
@@ -40,23 +44,20 @@ chrome.storage.sync.get(['SettingCodeList'], function(storageData)
 });
 
 // 処理メイン
-function processMain()
+function processMain(elementList, zMode)
 {
-  const currentDomain = window.location.hostname;
-  let splittedDomain = currentDomain.split(".");
-  splittedDomain = splittedDomain.filter(x => x != "www");
-  console.log(currentDomain);
-
-  // すべての要素を取得、処理実施
-  const elements = document.querySelectorAll('*');
-  
-  const Mos = "▒";
-
-  elements.forEach(element =>
+  elementList.forEach(element =>
   {
-    // 画像・テキスト処理
-    //console.log(element.textContent);
-    element.childNodes.forEach(childNode =>
+    processElement(element, SplittedDomain, zMode);
+  });
+}
+
+// 分割メイン処理
+function processElement(targetelement, splittedCurrentDomain, zMode)
+{
+  // 画像・テキスト処理
+  //console.log(element.textContent);
+  targetelement.childNodes.forEach(childNode =>
     {
       imageProcess(childNode);
       hrefProcess(childNode);
@@ -67,62 +68,46 @@ function processMain()
         childNode.textContent = processText(childNode.textContent);
       }
     });
-
-    //console.log(currentDomain);
-    if(!EnableZmode)
-    {
-      //console.log("Z Mode is Disable");
-      return;
-    }
-    if(ArrowListOnZmode.some(x => currentDomain.lastIndexOf(x) != -1))
-    {
-      //console.log("Z Mode is Enable But includes ArrowUrlList:" + currentDomain);
-      return;
-    }
-    if(LocalAddresses.some(x => currentDomain.includes(x)))
-    {
-      console.log("Z Mode is Enable But LocalAddress:" + currentDomain);
-      return;
-    }
     
+    if(!zMode) return;
+
     // リンク要素の場合
-    if (element.tagName === 'A' && element.href) {
-        const linkDomain = new URL(element.href).hostname;
-        if (checkDomain(linkDomain, splittedDomain)) {
+    if (targetelement.tagName === 'A' && targetelement.href) {
+        const linkDomain = new URL(targetelement.href).hostname;
+        if (checkDomain(linkDomain, splittedCurrentDomain)) {
             console.log("removed href:"+ linkDomain);
-            let pre = element.text;
-            element.text =  Mos.repeat(pre.length);
+            let pre = targetelement.text;
+            targetelement.text =  Mos.repeat(pre.length);
         }
     }
     // iframe要素の場合
-    else if (element.tagName === 'IFRAME' && element.src) {
-        const iframeDomain = new URL(element.src).hostname;
-        if (checkDomain(iframeDomain, splittedDomain)) {
+    else if (targetelement.tagName === 'IFRAME' && targetelement.src) {
+        const iframeDomain = new URL(targetelement.src).hostname;
+        if (checkDomain(iframeDomain, splittedCurrentDomain)) {
             console.log("removed IFRAME:"+ iframeDomain);
-            element.remove();
+            targetelement.remove();
         }
     }
     // 画像要素の場合
-    else if (element.tagName === 'IMG' && element.src) {
-        const imgDomain = new URL(element.src).hostname;
-        if (checkDomain(imgDomain, splittedDomain)) {
+    else if (targetelement.tagName === 'IMG' && targetelement.src) {
+        const imgDomain = new URL(targetelement.src).hostname;
+        if (checkDomain(imgDomain, splittedCurrentDomain)) {
             console.log("removed IMG:"+ imgDomain);
-            element.src = BT_ImgUrl;
-            let pre = element.alt;
-            element.alt =  Mos.repeat(pre.length);
+            targetelement.src = BT_ImgUrl;
+            let pre = targetelement.alt;
+            targetelement.alt =  Mos.repeat(pre.length);
         }
     }
     // その他の要素の場合
-    else if (element.src) {
-        const elementDomain = new URL(element.src).hostname;
-        if (checkDomain(elementDomain, splittedDomain)) {
+    else if (targetelement.src) {
+        const elementDomain = new URL(targetelement.src).hostname;
+        if (checkDomain(elementDomain, splittedCurrentDomain)) {
             console.log("removed OTHER:"+ elementDomain);
-            let pre = element.text;
-            element.text =  Mos.repeat(pre.length);
+            let pre = targetelement.text;
+            targetelement.text =  Mos.repeat(pre.length);
             //element.remove();
         }
     }
-  });
 }
 
 // 分割合致
@@ -223,17 +208,43 @@ function titleProcess(childNode)
 // 処理メイン
 function pageProcessMain()
 {
+  CurrentDomain = window.location.hostname;
+  let splittedDomain = CurrentDomain.split(".");
+  SplittedDomain = splittedDomain.filter(x => x != "www");
+  console.log(CurrentDomain);
+  console.log(SplittedDomain);
+
+  let zMode = EnableZmode;
+  if(!EnableZmode)
+  {
+    console.log("Z Mode is Disable");
+  }
+  if(ArrowListOnZmode.some(x => CurrentDomain.lastIndexOf(x) != -1))
+  {
+    console.log("Z Mode is Enable But includes ArrowUrlList:" + currentDomain);
+    zMode = false;
+  }
+  if(LocalAddresses.some(x => CurrentDomain.includes(x)))
+  {
+    console.log("Z Mode is Enable But LocalAddress:" + CurrentDomain);
+    zMode = false;
+  }
+
   // Observer
   const observer = new MutationObserver(records =>
   {
-    processMain();
+    let elements = document.querySelectorAll('*');
+    processMain(elements, zMode);
   });
 
   // 動的に追加された箇所も処理
   observer.observe(document.querySelector('html body'), {childList: true, subtree: true});
 
   // 最初に表示された部分の処理
-  processMain();
+  // すべての要素を取得、処理実施
+  const elements = document.querySelectorAll('*');
+
+  processMain(elements, zMode);
 
   titleSetting(document);
 }
@@ -243,5 +254,5 @@ function titleSetting(document)
 {
   // Zモード追加により、統計処理を別途考える必要があるため、タイトルには処理数は表示しない(暫定)
   let failedString = (FailedCodeRead == true) ? "(E)" : "";
-  document.title = failedString + (EnableZmode ? "(Zモード有効化中)" : "");
+  document.title = failedString + document.title + (EnableZmode ? "(Z)" : "");
 }
