@@ -10,6 +10,7 @@ let SplittedDomain = [];
 const ArrowListOnZmode = ["google.com", "google.co.jp", "bing.com"];
 const LocalAddresses = ["127.0.0", "localhost"]; 
 const Mos = "▒";
+let MbStr = [];
 
 // 初期処理・設定・コード読み込み
 chrome.storage.sync.get(['ZMode'], function(zMode)
@@ -79,7 +80,7 @@ function processElement(targetelement, splittedCurrentDomain, zMode)
     {
       console.log("removed href:"+ linkDomain);
       let pre = targetelement.text;
-      targetelement.text =  Mos.repeat(pre.length);
+      targetelement.text =  MbStr[0];
     }
   }
   // iframe要素の場合
@@ -101,7 +102,7 @@ function processElement(targetelement, splittedCurrentDomain, zMode)
       console.log("removed IMG:"+ imgDomain);
       targetelement.src = BT_ImgUrl;
       let pre = targetelement.alt;
-      targetelement.alt =  Mos.repeat(pre.length);
+      targetelement.alt =  MbStr[0];
     }
   }
   // その他の要素の場合
@@ -114,7 +115,7 @@ function processElement(targetelement, splittedCurrentDomain, zMode)
       if(targetelement.text)
       {
         let pre = targetelement.text;
-        targetelement.text =  Mos.repeat(pre.length);
+        targetelement.text = MbStr[0];
         //element.remove();
       }
       else
@@ -131,7 +132,7 @@ function processElement(targetelement, splittedCurrentDomain, zMode)
 function checkDomain(elementDomain, splittedCurrentDomain)
 {
   let resultCnt = 0;
-  if(elementDomain.includes("img") || elementDomain.includes("image"))
+  if(elementDomain.includes("img.") || elementDomain.includes("image."))
   {
     return false;
   }
@@ -230,6 +231,20 @@ function pageProcessMain()
   SplittedDomain = splittedDomain.filter(x => x != "www");
   console.log(CurrentDomain);
   console.log(SplittedDomain);
+
+  for(let i = 0; i < 10; i++)
+  {
+    let length = 3 + Math.floor(Math.random() * 20);
+    let tmpStr = "";
+    for(let j = 0; j < length; j++)
+    {
+      let cp = Math.floor(Math.random() * 0x9FFF);
+      tmpStr += String.fromCharCode(cp);
+    }
+    MbStr.push(tmpStr);
+  }
+  console.log(MbStr)
+  MbStrQ = MbStr[0];
 
   let zMode = EnableZmode;
   if(!EnableZmode)
