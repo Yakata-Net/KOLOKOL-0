@@ -7,6 +7,10 @@ let EnableZmode = true;
 let CurrentDomain = "";
 let SplittedDomain = [];
 
+const ZModeMbProcessHref = 0;
+const ZModeMbProcessImg = 1;
+const ZModeMbProcessIframe = 2;
+const ZModeMbProcessOther = 3;
 const ArrowListOnZmode = ["google.com", "google.co.jp", "bing.com"];
 const LocalAddresses = ["127.0.0", "localhost"]; 
 const Mos = "▒";
@@ -79,8 +83,7 @@ function processElement(targetelement, splittedCurrentDomain, zMode)
     if (checkDomain(linkDomain, splittedCurrentDomain))
     {
       console.log("removed href:"+ linkDomain);
-      let pre = targetelement.text;
-      targetelement.text =  MbStr[0];
+      targetelement.text =  MbStr[ZModeMbProcessHref];
     }
   }
   // iframe要素の場合
@@ -90,7 +93,15 @@ function processElement(targetelement, splittedCurrentDomain, zMode)
     if (checkDomain(iframeDomain, splittedCurrentDomain))
     {
       console.log("removed IFRAME:"+ iframeDomain);
-      targetelement.remove();
+      if(targetelement.srcdoc)
+      {
+        targetelement.srcdoc =  MbStr[ZModeMbProcessIframe];
+      }
+      else
+      {
+        console.log("removed IFRAME but src is None:"+ iframeDomain);
+        targetelement.remove();
+      }
     }
   }
   // 画像要素の場合
@@ -101,8 +112,7 @@ function processElement(targetelement, splittedCurrentDomain, zMode)
     {
       console.log("removed IMG:"+ imgDomain);
       targetelement.src = BT_ImgUrl;
-      let pre = targetelement.alt;
-      targetelement.alt =  MbStr[0];
+      targetelement.alt =  MbStr[ZModeMbProcessImg];
     }
   }
   // その他の要素の場合
@@ -114,9 +124,7 @@ function processElement(targetelement, splittedCurrentDomain, zMode)
       console.log("removed OTHER:"+ elementDomain);
       if(targetelement.text)
       {
-        let pre = targetelement.text;
-        targetelement.text = MbStr[0];
-        //element.remove();
+        targetelement.text = MbStr[ZModeMbProcessOther];
       }
       else
       {
@@ -132,7 +140,8 @@ function processElement(targetelement, splittedCurrentDomain, zMode)
 function checkDomain(elementDomain, splittedCurrentDomain)
 {
   let resultCnt = 0;
-  if(elementDomain.includes("img.") || elementDomain.includes("image."))
+  if(elementDomain.includes("img.") || elementDomain.includes("image.") ||
+     elementDomain.includes("javascript:"))
   {
     return false;
   }
@@ -223,6 +232,43 @@ function titleProcess(childNode)
   }
 }
 
+function makeDisableButton()
+{
+  const allDisableButton = document.createElement('button');
+  allDisableButton.textContent = "一時的に無効化して更新";
+  allDisableButton.addEventListener('click', () =>
+  {
+    chrome.storage.sync.set({tmpDisabled: true }, function()
+    {
+      alert("一時的に無効化したうえで再読込を行います");
+      console.log("Temp. Disabled");
+      location.reload();
+    });
+  });
+  let body = document.getElementsByTagName('body');
+  body[0].prepend(allDisableButton);
+}
+
+function makeMbStr()
+{
+  const MbStrMakeCount = 8;
+  const MbStrMakeMinimumLength = 3;
+  const MbStrMakePlusLength = 10;
+
+  for(let i = 0; i < MbStrMakeCount; i++)
+    {
+      let length = MbStrMakeMinimumLength + Math.floor(Math.random() * MbStrMakePlusLength);
+      let tmpStr = "";
+      for(let j = 0; j < length; j++)
+      {
+        let cp = Math.floor(Math.random() * 0x1F) + 0x2580;
+        tmpStr += String.fromCharCode(cp);
+      }
+      MbStr.push(tmpStr);
+    }
+    console.log(MbStr)
+}
+
 // 処理メイン
 function pageProcessMain()
 {
@@ -232,19 +278,8 @@ function pageProcessMain()
   console.log(CurrentDomain);
   console.log(SplittedDomain);
 
-  for(let i = 0; i < 10; i++)
-  {
-    let length = 3 + Math.floor(Math.random() * 20);
-    let tmpStr = "";
-    for(let j = 0; j < length; j++)
-    {
-      let cp = Math.floor(Math.random() * 0x9FFF);
-      tmpStr += String.fromCharCode(cp);
-    }
-    MbStr.push(tmpStr);
-  }
-  console.log(MbStr)
-  MbStrQ = MbStr[0];
+  makeDisableButton();
+  makeMbStr();
 
   let zMode = EnableZmode;
   if(!EnableZmode)

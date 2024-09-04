@@ -25,9 +25,5 @@
       "js": ["content_init.js"]
     }
   ],
-  "action":
-  {
-    "default_popup": "popup.html"
-  },
   "options_page": "option.html"
 }
