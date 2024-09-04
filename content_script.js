@@ -232,21 +232,44 @@ function titleProcess(childNode)
   }
 }
 
-function makeDisableButton()
+function makeStatusPanel()
 {
+  const panelDiv = document.createElement('div');
+  const statusP = document.createElement('p');
   const allDisableButton = document.createElement('button');
-  allDisableButton.textContent = "一時的に無効化して更新";
+
+  statusP.style.margin = "5px";
+  statusP.textContent = "Zモード:" + (EnableZmode ? "有効" : "無効");
+
+  allDisableButton.style.margin = "5px";
+  allDisableButton.textContent = "一時的に全機能無効化・更新";
   allDisableButton.addEventListener('click', () =>
   {
+    if(!confirm("一時的に無効化したうえで再読込を行います"))
+    {
+      return;
+    }
+
     chrome.storage.sync.set({tmpDisabled: true }, function()
     {
-      alert("一時的に無効化したうえで再読込を行います");
       console.log("Temp. Disabled");
       location.reload();
     });
   });
+
+  panelDiv.style.width = "100%";
+  panelDiv.style.margin = "5px";
+  panelDiv.style.zIndex = "9999";
+  //panelDiv.style.position = "fixed";
+  panelDiv.style.display = "flex";
+  panelDiv.style.border = "solid";
+  panelDiv.style.borderRadius = "2px";
+  panelDiv.style.background = (EnableZmode ? "#FF808080" : "#FFFF8060");
+  panelDiv.appendChild(statusP);
+  panelDiv.appendChild(allDisableButton);
+
   let body = document.getElementsByTagName('body');
-  body[0].prepend(allDisableButton);
+  body[0].prepend(panelDiv);
 }
 
 function makeMbStr()
@@ -278,7 +301,7 @@ function pageProcessMain()
   console.log(CurrentDomain);
   console.log(SplittedDomain);
 
-  makeDisableButton();
+  makeStatusPanel();
   makeMbStr();
 
   let zMode = EnableZmode;
