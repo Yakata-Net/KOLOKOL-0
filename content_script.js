@@ -81,7 +81,7 @@ function processElement(targetelement, splittedCurrentDomain, zMode)
     if (checkDomain(linkDomain, splittedCurrentDomain))
     {
       console.log("removed href:"+ linkDomain);
-      targetelement.text =  makeMbStr(targetelement.text.length);
+      targetelement.text =  makeMbStr([...targetelement.text].length);
     }
   }
   // iframe要素の場合
@@ -102,7 +102,7 @@ function processElement(targetelement, splittedCurrentDomain, zMode)
     {
       console.log("removed IMG:"+ imgDomain);
       targetelement.src = BT_ImgUrl;
-      targetelement.alt =  makeMbStr(targetelement.alt.length);
+      targetelement.alt =  makeMbStr([...targetelement.alt].length);
     }
   }
   // その他の要素の場合
@@ -114,7 +114,7 @@ function processElement(targetelement, splittedCurrentDomain, zMode)
       console.log("removed OTHER:"+ elementDomain);
       if(targetelement.text)
       {
-        targetelement.text = makeMbStr(targetelement.text.length);
+        targetelement.text = makeMbStr([...targetelement.text].length);
       }
       else
       {
@@ -284,8 +284,8 @@ function makeMbStr(maxlen)
   let tmpStr = "";
   for(let j = 0; j < maxlen; j++)
   {
-    let cp = Math.floor(Math.random() * 0x1F) + 0x2580;
-    tmpStr += String.fromCharCode(cp);
+    let cp = 0x13000 + Math.floor(Math.random() * 0x00042F);
+    tmpStr += String.fromCodePoint(cp);
   }
   return tmpStr;
 }

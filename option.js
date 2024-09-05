@@ -7,6 +7,8 @@ addButton.addEventListener('click', codeAdd);
 let zmodeCheck = document.getElementById('zMode');
 zmodeCheck.addEventListener('change', zModeChange);
 
+let zMode = false;
+
 // コード追加
 function codeAdd()
 {
@@ -17,7 +19,7 @@ function codeAdd()
   }
 
   CodeList.push("");
-  formRefrash(CodeList);
+  formRefrash(CodeList, zMode);
 }
 
 // コード(複数)読取処理
@@ -99,7 +101,7 @@ async function codeDelete()
 
   // 削除ではなく、更新済みリストを上書きする
   await SaveCode(CodeList);
-  formRefrash(CodeList);
+  formRefrash(CodeList, zMode);
 }
 
 // Zモード変更
@@ -189,8 +191,8 @@ main()
 async function main()
 {
   CodeList = await ReadCode();
-  ZMode = await ReadZMode();
-  formRefrash(CodeList, ZMode);
+  zMode = await ReadZMode();
+  formRefrash(CodeList, zMode);
 }
 
 // フォーム更新
