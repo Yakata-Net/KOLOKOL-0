@@ -13,8 +13,6 @@ const ZModeMbProcessIframe = 2;
 const ZModeMbProcessOther = 3;
 const ArrowListOnZmode = ["google.com", "google.co.jp", "bing.com"];
 const LocalAddresses = ["127.0.0", "localhost"]; 
-const Mos = "▒";
-let MbStr = [];
 
 // 初期処理・設定・コード読み込み
 chrome.storage.sync.get(['ZMode'], function(zMode)
@@ -83,7 +81,7 @@ function processElement(targetelement, splittedCurrentDomain, zMode)
     if (checkDomain(linkDomain, splittedCurrentDomain))
     {
       console.log("removed href:"+ linkDomain);
-      targetelement.text =  MbStr[ZModeMbProcessHref];
+      targetelement.text =  makeMbStr(targetelement.text.length);
     }
   }
   // iframe要素の場合
@@ -93,15 +91,7 @@ function processElement(targetelement, splittedCurrentDomain, zMode)
     if (checkDomain(iframeDomain, splittedCurrentDomain))
     {
       console.log("removed IFRAME:"+ iframeDomain);
-      if(targetelement.srcdoc)
-      {
-        targetelement.srcdoc =  MbStr[ZModeMbProcessIframe];
-      }
-      else
-      {
-        console.log("removed IFRAME but src is None:"+ iframeDomain);
-        targetelement.remove();
-      }
+      targetelement.replaceWith(makeIfd());
     }
   }
   // 画像要素の場合
@@ -112,7 +102,7 @@ function processElement(targetelement, splittedCurrentDomain, zMode)
     {
       console.log("removed IMG:"+ imgDomain);
       targetelement.src = BT_ImgUrl;
-      targetelement.alt =  MbStr[ZModeMbProcessImg];
+      targetelement.alt =  makeMbStr(targetelement.alt.length);
     }
   }
   // その他の要素の場合
@@ -124,7 +114,7 @@ function processElement(targetelement, splittedCurrentDomain, zMode)
       console.log("removed OTHER:"+ elementDomain);
       if(targetelement.text)
       {
-        targetelement.text = MbStr[ZModeMbProcessOther];
+        targetelement.text = makeMbStr(targetelement.text.length);
       }
       else
       {
@@ -232,6 +222,24 @@ function titleProcess(childNode)
   }
 }
 
+function makeIfd()
+{
+  const ifdDiv = document.createElement('div');
+  const ifdP = document.createElement('p');
+  ifdP.textContent = "工事中";
+
+  ifdDiv.style.margin = "5px";
+  ifdDiv.style.zIndex = "9999";
+  ifdDiv.style.display = "flex";
+  ifdDiv.style.border = "solid";
+  ifdDiv.style.borderRadius = "2px";
+  ifdDiv.style.background = "#A0A00060";
+
+  ifdDiv.appendChild(ifdP);
+
+  return ifdDiv;
+}
+
 function makeStatusPanel()
 {
   const panelDiv = document.createElement('div');
@@ -260,7 +268,6 @@ function makeStatusPanel()
   panelDiv.style.width = "100%";
   panelDiv.style.margin = "5px";
   panelDiv.style.zIndex = "9999";
-  //panelDiv.style.position = "fixed";
   panelDiv.style.display = "flex";
   panelDiv.style.border = "solid";
   panelDiv.style.borderRadius = "2px";
@@ -272,24 +279,15 @@ function makeStatusPanel()
   body[0].prepend(panelDiv);
 }
 
-function makeMbStr()
+function makeMbStr(maxlen)
 {
-  const MbStrMakeCount = 8;
-  const MbStrMakeMinimumLength = 3;
-  const MbStrMakePlusLength = 10;
-
-  for(let i = 0; i < MbStrMakeCount; i++)
-    {
-      let length = MbStrMakeMinimumLength + Math.floor(Math.random() * MbStrMakePlusLength);
-      let tmpStr = "";
-      for(let j = 0; j < length; j++)
-      {
-        let cp = Math.floor(Math.random() * 0x1F) + 0x2580;
-        tmpStr += String.fromCharCode(cp);
-      }
-      MbStr.push(tmpStr);
-    }
-    console.log(MbStr)
+  let tmpStr = "";
+  for(let j = 0; j < maxlen; j++)
+  {
+    let cp = Math.floor(Math.random() * 0x1F) + 0x2580;
+    tmpStr += String.fromCharCode(cp);
+  }
+  return tmpStr;
 }
 
 // 処理メイン
@@ -302,7 +300,6 @@ function pageProcessMain()
   console.log(SplittedDomain);
 
   makeStatusPanel();
-  makeMbStr();
 
   let zMode = EnableZmode;
   if(!EnableZmode)
@@ -321,8 +318,9 @@ function pageProcessMain()
   }
 
   // Observer
-  const observer = new MutationObserver(records =>
+  const observer = new MutationObserver((records, observer) =>
   {
+    observer.disconnect();
     let elements = document.querySelectorAll('*');
     /*
     // (秋子へ)暫定。下記コードだと必要な隠ぺい処理が不可能。解決策見つかるまで↑コードで全部処理させる
@@ -335,10 +333,11 @@ function pageProcessMain()
         elementList.push(addedNode);
       }
     }
+    console.log(elementList);
     */
-    //console.log(elementList);
 
     processMain(elements, zMode);
+    observer.observe(document.querySelector('html body'), {childList: true, subtree: true});
   });
 
   // 動的に追加された箇所も処理
