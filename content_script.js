@@ -7,59 +7,110 @@ let EnableZmode = true;
 let CurrentDomain = "";
 let SplittedDomain = [];
 
-const ZModeMbProcessHref = 0;
-const ZModeMbProcessImg = 1;
-const ZModeMbProcessIframe = 2;
-const ZModeMbProcessOther = 3;
-const ArrowListOnZmode = ["google.com", "google.co.jp", "bing.com"];
 const LocalAddresses = ["127.0.0", "localhost"]; 
+let ArrowListOnZmode = [];
 
-// 初期処理・設定・コード読み込み
-chrome.storage.sync.get(['ZMode'], function(zMode)
+Main();
+
+function Main()
 {
-  if(zMode != undefined)
+  // 初期処理・設定・コード読み込み
+  chrome.storage.sync.get(['ZMode'], function(zMode)
   {
-    console.log("ZMode Loading Complete:" + zMode.ZMode);
-    EnableZmode = zMode.ZMode;
-  }
-});
-
-chrome.storage.sync.get(['SettingCodeList'], function(storageData)
-{
-  if(storageData?.SettingCodeList != null)
-  {
-    console.log("Code Loading Complete(Count:" + storageData.SettingCodeList.length + ")");
-    CodeList = storageData.SettingCodeList;
-  }
-  else
-  {
-    FailedCodeRead = true;
-  }
-
-  chrome.storage.sync.get(['tmpDisabled'], function(storageDataForTmpDisabled)
-  {
-    if(storageDataForTmpDisabled?.tmpDisabled == null || !storageDataForTmpDisabled.tmpDisabled)
+    if(zMode != undefined)
     {
-      pageProcessMain();
+      console.log("ZMode Loading Complete:" + zMode.ZMode);
+      EnableZmode = zMode.ZMode;
     }
-    chrome.storage.sync.set({tmpDisabled: false }, function(){});
   });
-});
 
-// 処理メイン
-function processMain(elementList, zMode)
+  chrome.storage.sync.get(['ArrowListOnZmode'], function(storageData)
+  {
+    if(storageData?.ArrowListOnZmode != null)
+    {
+      console.log("ArrowListOnZmode Loading Complete(Count:" + storageData.ArrowListOnZmode.length + ")");
+      ArrowListOnZmode = storageData.ArrowListOnZmode;
+    }
+  });
+
+  chrome.storage.sync.get(['SettingCodeList'], function(storageData)
+  {
+    if(storageData?.SettingCodeList != null)
+    {
+      console.log("Code Loading Complete(Count:" + storageData.SettingCodeList.length + ")");
+      CodeList = storageData.SettingCodeList;
+    }
+    else
+    {
+      FailedCodeRead = true;
+    }
+
+    chrome.storage.sync.get(['tmpDisabled'], function(storageDataForTmpDisabled)
+    {
+      if(storageDataForTmpDisabled?.tmpDisabled == null || !storageDataForTmpDisabled.tmpDisabled)
+      {
+        pageProcessMain();  // Entry
+      }
+      chrome.storage.sync.set({tmpDisabled: false }, function(){});
+    });
+  });
+}
+
+function pageProcessMain()
 {
-  elementList.forEach(element =>
+  CurrentDomain = window.location.hostname;
+  let splittedDomain = CurrentDomain.split(".");
+  SplittedDomain = splittedDomain.filter(x => x != "www");
+  console.log(CurrentDomain);
+  console.log(SplittedDomain);
+
+  makeZModeStatusPanel();
+
+  let zMode = EnableZmode;
+  if(!EnableZmode) { console.log("Z Mode is Disable"); }
+
+  if(EnableZmode && ArrowListOnZmode.some(x => CurrentDomain.lastIndexOf(x) != -1))
+  {
+    console.log("Z Mode is Enable But includes ArrowUrlList:" + CurrentDomain);
+    zMode = false;
+  }
+  if(EnableZmode && LocalAddresses.some(x => CurrentDomain.includes(x)))
+  {
+    console.log("Z Mode is Enable But LocalAddress:" + CurrentDomain);
+    zMode = false;
+  }
+
+  // Observer
+  const observer = new MutationObserver((records, observer) =>
+  {
+    observer.disconnect();
+    let elements = document.querySelectorAll('*');
+
+    elements.forEach(element =>
+    {
+      processElement(element, SplittedDomain, zMode);
+    });
+
+    observer.observe(document.querySelector('html body'), {childList: true, subtree: true});
+  });
+
+  // 動的に追加された箇所も処理
+  observer.observe(document.querySelector('html body'), {childList: true, subtree: true});
+
+  // 最初に表示された部分の処理
+  // すべての要素を取得、処理実施
+  const elements = document.querySelectorAll('*');
+  elements.forEach(element =>
   {
     processElement(element, SplittedDomain, zMode);
   });
+  pageTitleSetting(document);
 }
 
 // 分割メイン処理
 function processElement(targetelement, splittedCurrentDomain, zMode)
 {
   // 画像・テキスト処理
-  //console.log(element.textContent);
   targetelement.childNodes.forEach(childNode =>
   {
     imageProcess(childNode);
@@ -75,7 +126,7 @@ function processElement(targetelement, splittedCurrentDomain, zMode)
   if(!zMode) return;
 
   // リンク要素の場合
-  if (targetelement.tagName === 'A' && targetelement.href)
+  if (targetelement.tagName === 'A' && targetelement.href && !targetelement.href.includes("javascript:"))
   {
     const linkDomain = new URL(targetelement.href).hostname;
     if (checkDomain(linkDomain, splittedCurrentDomain))
@@ -85,25 +136,27 @@ function processElement(targetelement, splittedCurrentDomain, zMode)
     }
   }
   // iframe要素の場合
-  else if (targetelement.tagName === 'IFRAME' && targetelement.src)
+  else if (targetelement.tagName === 'IFRAME')
   {
-    const iframeDomain = new URL(targetelement.src).hostname;
-    if (checkDomain(iframeDomain, splittedCurrentDomain))
+    if(!targetelement.src)
     {
-      console.log("removed IFRAME:"+ iframeDomain);
-      targetelement.replaceWith(makeIfd());
+      console.log("removed unknown domain IFRAME");
+      targetelement.replaceWith(makeProcessedPanel());
+    }
+    else
+    {
+      const iframeDomain = new URL(targetelement.src).hostname;
+      if (checkDomain(iframeDomain, splittedCurrentDomain))
+      {
+        console.log("removed IFRAME:"+ iframeDomain);
+        targetelement.replaceWith(makeProcessedPanel());
+      }
     }
   }
   // 画像要素の場合
-  else if (targetelement.tagName === 'IMG' && targetelement.src)
+  else if(targetelement.tagName === 'IMG')
   {
-    const imgDomain = new URL(targetelement.src).hostname;
-    if (checkDomain(imgDomain, splittedCurrentDomain))
-    {
-      console.log("removed IMG:"+ imgDomain);
-      targetelement.src = BT_ImgUrl;
-      targetelement.alt =  makeMbStr([...targetelement.alt].length);
-    }
+    // いったん何もしない
   }
   // その他の要素の場合
   else if (targetelement.src)
@@ -130,13 +183,7 @@ function processElement(targetelement, splittedCurrentDomain, zMode)
 function checkDomain(elementDomain, splittedCurrentDomain)
 {
   let resultCnt = 0;
-  if(elementDomain.includes("img.") || elementDomain.includes("image.") ||
-     elementDomain.includes("javascript:"))
-  {
-    return false;
-  }
 
-  //console.log(splittedCurrentDomain)
   splittedCurrentDomain.forEach(spl =>
   {
     if(elementDomain.includes(spl))
@@ -151,8 +198,7 @@ function checkDomain(elementDomain, splittedCurrentDomain)
 function processText(text)
 {
   // 処理部分。ストア・セキュリティソフトの検査をすり抜けるため、ここは外部から設定するようにする。
-  // 任意のコードを実行
-  // 将来的には、リモートで書き換えができるようにする
+  // 将来的には、リモートで書き換え・任意コード実行ができるようにする
   for(let i = 0; i < CodeList.length; i++)
   {
     let preProcessString = text;
@@ -181,19 +227,15 @@ function imageProcess(childNode)
     }
   }
 }
+
 // リンク処理
 function hrefProcess(childNode)
 {
-  if(childNode.href == null) {return};
+  if(childNode.href == null) return;
+
   let beforeHref = "";
-  try
-  {
-    beforeHref = decodeURI(childNode.href);
-  }
-  catch(e)
-  {
-    console.log("URL Decode ERROR:" + childNode.href);
-  }
+  try { beforeHref = decodeURI(childNode.href); }
+  catch(e) { console.log("URL Decode ERROR:" + childNode.href); }
 
   for(let i = 0; i < CodeList.length; i++)
   {
@@ -209,7 +251,7 @@ function hrefProcess(childNode)
 // タイトル文処理
 function titleProcess(childNode)
 {
-  if(childNode.title == null) {return};
+  if(childNode.title == null) return;
 
   for(let i = 0; i < CodeList.length; i++)
   {
@@ -222,7 +264,7 @@ function titleProcess(childNode)
   }
 }
 
-function makeIfd()
+function makeProcessedPanel()
 {
   const ifdDiv = document.createElement('div');
   const ifdP = document.createElement('p');
@@ -231,32 +273,50 @@ function makeIfd()
   ifdDiv.style.margin = "5px";
   ifdDiv.style.zIndex = "9999";
   ifdDiv.style.display = "flex";
-  ifdDiv.style.border = "solid";
-  ifdDiv.style.borderRadius = "2px";
-  ifdDiv.style.background = "#A0A00060";
+  ifdDiv.style.borderRadius = "1px";
+  ifdDiv.style.background = "#A0A00040";
 
   ifdDiv.appendChild(ifdP);
 
   return ifdDiv;
 }
 
-function makeStatusPanel()
+function makeZModeStatusPanel()
 {
   const panelDiv = document.createElement('div');
   const statusP = document.createElement('p');
   const allDisableButton = document.createElement('button');
+  const disableZModeArrowButton = document.createElement('button');
 
-  statusP.style.margin = "5px";
-  statusP.textContent = "Zモード:" + (EnableZmode ? "有効" : "無効");
+  statusP.style.margin = "auto";
+  let buttonText = "";
+  let colorText = "";
+  let EnableZModeThisSite = false;
+  if(!EnableZmode)
+  {
+    EnableZModeThisSite = false;
+    colorText = "#FFFF8060";
+    buttonText = "Zモード:無効";
+  }
+  else
+  {
+    EnableZModeThisSite = true;
+    colorText = "#FF808080";
+    buttonText = "Zモード:有効";
+    if(ArrowListOnZmode.some(x => x === CurrentDomain))
+    {
+      EnableZModeThisSite = false;
+      colorText = "#00808060";
+      buttonText = "Zモード:有効(このサイトでは無効)";
+    }
+  }
+  statusP.textContent = buttonText;
 
-  allDisableButton.style.margin = "5px";
+  allDisableButton.style.margin = "auto";
   allDisableButton.textContent = "一時的に全機能無効化・更新";
   allDisableButton.addEventListener('click', () =>
   {
-    if(!confirm("一時的に無効化したうえで再読込を行います"))
-    {
-      return;
-    }
+    if(!confirm("一時的に全機能を無効化したうえで再読込を行います")) return;
 
     chrome.storage.sync.set({tmpDisabled: true }, function()
     {
@@ -265,15 +325,39 @@ function makeStatusPanel()
     });
   });
 
-  panelDiv.style.width = "100%";
+  disableZModeArrowButton.style.margin = "auto";
+  disableZModeArrowButton.textContent = EnableZModeThisSite ? "このサイトではZモードを無効化" : "このサイトでZモードを再度有効化" ;
+  disableZModeArrowButton.addEventListener('click', () =>
+  {
+    let dialogText = EnableZModeThisSite ? "このサイトではZモードを無効化し、再読込します(通常処理は無効化されません)" :
+    "このサイトでZモードを有効化し、再読込します";
+    if(!confirm(dialogText)) return;
+
+    if(EnableZModeThisSite)
+    {
+      ArrowListOnZmode.push(CurrentDomain);
+    }
+    else
+    {
+      ArrowListOnZmode = ArrowListOnZmode.filter(x => x !== CurrentDomain);
+    }
+
+    chrome.storage.sync.set({ArrowListOnZmode: ArrowListOnZmode }, function()
+    {
+      console.log("ZModeDisableArrow:" + CurrentDomain);
+      location.reload();
+    });
+  });
+
   panelDiv.style.margin = "5px";
   panelDiv.style.zIndex = "9999";
   panelDiv.style.display = "flex";
   panelDiv.style.border = "solid";
   panelDiv.style.borderRadius = "2px";
-  panelDiv.style.background = (EnableZmode ? "#FF808080" : "#FFFF8060");
+  panelDiv.style.background = colorText;
   panelDiv.appendChild(statusP);
   panelDiv.appendChild(allDisableButton);
+  panelDiv.appendChild(disableZModeArrowButton);
 
   let body = document.getElementsByTagName('body');
   body[0].prepend(panelDiv);
@@ -290,70 +374,8 @@ function makeMbStr(maxlen)
   return tmpStr;
 }
 
-// 処理メイン
-function pageProcessMain()
-{
-  CurrentDomain = window.location.hostname;
-  let splittedDomain = CurrentDomain.split(".");
-  SplittedDomain = splittedDomain.filter(x => x != "www");
-  console.log(CurrentDomain);
-  console.log(SplittedDomain);
-
-  makeStatusPanel();
-
-  let zMode = EnableZmode;
-  if(!EnableZmode)
-  {
-    console.log("Z Mode is Disable");
-  }
-  if(ArrowListOnZmode.some(x => CurrentDomain.lastIndexOf(x) != -1))
-  {
-    console.log("Z Mode is Enable But includes ArrowUrlList:" + currentDomain);
-    zMode = false;
-  }
-  if(LocalAddresses.some(x => CurrentDomain.includes(x)))
-  {
-    console.log("Z Mode is Enable But LocalAddress:" + CurrentDomain);
-    zMode = false;
-  }
-
-  // Observer
-  const observer = new MutationObserver((records, observer) =>
-  {
-    observer.disconnect();
-    let elements = document.querySelectorAll('*');
-    /*
-    // (秋子へ)暫定。下記コードだと必要な隠ぺい処理が不可能。解決策見つかるまで↑コードで全部処理させる
-    let elementList = [];
-    for(const record of records)
-    {
-      elementList.push(record.target);
-      for(const addedNode of record.addedNodes)
-      {
-        elementList.push(addedNode);
-      }
-    }
-    console.log(elementList);
-    */
-
-    processMain(elements, zMode);
-    observer.observe(document.querySelector('html body'), {childList: true, subtree: true});
-  });
-
-  // 動的に追加された箇所も処理
-  observer.observe(document.querySelector('html body'), {childList: true, subtree: true});
-
-  // 最初に表示された部分の処理
-  // すべての要素を取得、処理実施
-  const elements = document.querySelectorAll('*');
-
-  processMain(elements, zMode);
-
-  titleSetting(document);
-}
-
 // タイトル設定
-function titleSetting(document)
+function pageTitleSetting(document)
 {
   // Zモード追加により、統計処理を別途考える必要があるため、タイトルには処理数は表示しない(暫定)
   let failedString = (FailedCodeRead == true) ? "(E)" : "";
