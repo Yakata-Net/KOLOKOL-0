@@ -132,7 +132,7 @@ function processElement(targetelement, splittedCurrentDomain, zMode)
     if (checkDomain(linkDomain, splittedCurrentDomain))
     {
       console.log("removed href:"+ linkDomain);
-      targetelement.text =  makeMbStr([...targetelement.text].length);
+      targetelement.style.filter = 'blur(15px)';
     }
   }
   // iframe要素の場合
@@ -141,7 +141,7 @@ function processElement(targetelement, splittedCurrentDomain, zMode)
     if(!targetelement.src)
     {
       console.log("removed unknown domain IFRAME");
-      targetelement.replaceWith(makeProcessedPanel());
+      targetelement.style.filter = 'blur(60px)';
     }
     else
     {
@@ -149,7 +149,7 @@ function processElement(targetelement, splittedCurrentDomain, zMode)
       if (checkDomain(iframeDomain, splittedCurrentDomain))
       {
         console.log("removed IFRAME:"+ iframeDomain);
-        targetelement.replaceWith(makeProcessedPanel());
+        targetelement.style.filter = 'blur(60px)';
       }
     }
   }
@@ -167,7 +167,7 @@ function processElement(targetelement, splittedCurrentDomain, zMode)
       console.log("removed OTHER:"+ elementDomain);
       if(targetelement.text)
       {
-        targetelement.text = makeMbStr([...targetelement.text].length);
+        targetelement.style.filter = 'blur(30px)';
       }
       else
       {
