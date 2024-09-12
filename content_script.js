@@ -8,6 +8,8 @@ let CurrentDomain = "";
 let SplittedDomain = [];
 
 const LocalAddresses = ["127.0.0", "localhost"]; 
+const Fl = "blur(30px) sepia(100%) saturate(500%) hue-rotate(305deg)";
+const Flw = "blur(0.5px) sepia(100%) saturate(500%) hue-rotate(305deg)"
 let ArrowListOnZmode = [];
 
 Main();
@@ -84,18 +86,34 @@ function pageProcessMain()
   const observer = new MutationObserver((records, observer) =>
   {
     observer.disconnect();
-    let elements = document.querySelectorAll('*');
+    let elements = [];
+
+    for(const record of records)
+    {
+      if(record.type == "attributes")
+      {
+        elements.push(record.target);
+      }
+      else if(record.type == "characterData")
+      {
+        elements.push(record.target);
+      }
+      for(const addedNode of record.addedNodes)
+      {
+        elements.push(addedNode);
+      }
+    }
 
     elements.forEach(element =>
     {
       processElement(element, SplittedDomain, zMode);
     });
 
-    observer.observe(document.querySelector('html body'), {childList: true, subtree: true});
+    observer.observe(document.querySelector('*'), {attributes:true, childList: true, subtree: true});
   });
 
   // 動的に追加された箇所も処理
-  observer.observe(document.querySelector('html body'), {childList: true, subtree: true});
+  observer.observe(document.querySelector('*'), {childList: true, subtree: true});
 
   // 最初に表示された部分の処理
   // すべての要素を取得、処理実施
@@ -132,7 +150,9 @@ function processElement(targetelement, splittedCurrentDomain, zMode)
     if (checkDomain(linkDomain, splittedCurrentDomain))
     {
       console.log("removed href:"+ linkDomain);
-      targetelement.text =  makeMbStr([...targetelement.text].length);
+      targetelement.style.filter = Flw;
+      targetelement.text = makeMbStr(targetelement.text);
+      //targetelement.text = "魂";
     }
   }
   // iframe要素の場合
@@ -141,7 +161,9 @@ function processElement(targetelement, splittedCurrentDomain, zMode)
     if(!targetelement.src)
     {
       console.log("removed unknown domain IFRAME");
-      targetelement.replaceWith(makeProcessedPanel());
+      targetelement.style.filter = Fl;
+      targetelement.width = "32px";
+      targetelement.height = "32px";  
     }
     else
     {
@@ -149,7 +171,9 @@ function processElement(targetelement, splittedCurrentDomain, zMode)
       if (checkDomain(iframeDomain, splittedCurrentDomain))
       {
         console.log("removed IFRAME:"+ iframeDomain);
-        targetelement.replaceWith(makeProcessedPanel());
+        targetelement.style.filter = Fl;
+        targetelement.width = "32px";
+        targetelement.height = "32px";  
       }
     }
   }
@@ -167,7 +191,10 @@ function processElement(targetelement, splittedCurrentDomain, zMode)
       console.log("removed OTHER:"+ elementDomain);
       if(targetelement.text)
       {
-        targetelement.text = makeMbStr([...targetelement.text].length);
+        targetelement.text = makeMbStr(targetelement.text);
+        targetelement.style.filter = Fl;
+        targetelement.width = "32px";
+        targetelement.height = "32px";  
       }
       else
       {
@@ -363,12 +390,12 @@ function makeZModeStatusPanel()
   body[0].prepend(panelDiv);
 }
 
-function makeMbStr(maxlen)
+function makeMbStr(inputText)
 {
   let tmpStr = "";
-  for(let j = 0; j < maxlen; j++)
+  for(let j = 0; j < inputText.length; j++)
   {
-    let cp = 0x13000 + Math.floor(Math.random() * 0x00042F);
+    let cp = inputText.codePointAt(j) + 0x0002;
     tmpStr += String.fromCodePoint(cp);
   }
   return tmpStr;
