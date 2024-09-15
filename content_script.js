@@ -113,7 +113,7 @@ function pageProcessMain()
   });
 
   // 動的に追加された箇所も処理
-  observer.observe(document.querySelector('*'), {childList: true, subtree: true});
+  observer.observe(document.querySelector('*'), {attributes:true, childList: true, subtree: true});
 
   // 最初に表示された部分の処理
   // すべての要素を取得、処理実施
@@ -146,13 +146,21 @@ function processElement(targetelement, splittedCurrentDomain, zMode)
   // リンク要素の場合
   if (targetelement.tagName === 'A' && targetelement.href && !targetelement.href.includes("javascript:"))
   {
-    const linkDomain = new URL(targetelement.href).hostname;
-    if (checkDomain(linkDomain, splittedCurrentDomain))
+    if(!URL.canParse(targetelement.href))
     {
-      console.log("removed href:"+ linkDomain);
-      targetelement.style.filter = Flw;
-      targetelement.text = makeMbStr(targetelement.text);
-      //targetelement.text = "魂";
+      console.log("removed href, CANNOT PARSE URL:"+ targetelement.href);
+      removeParentDiv(targetelement);
+    }
+    else
+    {
+      const linkDomain = new URL(targetelement.href).hostname;
+      if (checkDomain(linkDomain, splittedCurrentDomain))
+      {
+        console.log("removed href:"+ linkDomain);
+        targetelement.style.filter = Flw;
+        targetelement.text = makeMbStr(targetelement.text);
+        //removeParentDiv(targetelement);
+      }
     }
   }
   // iframe要素の場合
@@ -163,7 +171,12 @@ function processElement(targetelement, splittedCurrentDomain, zMode)
       console.log("removed unknown domain IFRAME");
       targetelement.style.filter = Fl;
       targetelement.width = "32px";
-      targetelement.height = "32px";  
+      targetelement.height = "32px";
+      removeParentDiv(targetelement);
+    }
+    else if(!URL.canParse(targetelement.src))
+    {
+      console.log("removed IFRAME, CANNOT PARSE URL:" + targetelement.src);
     }
     else
     {
@@ -173,34 +186,43 @@ function processElement(targetelement, splittedCurrentDomain, zMode)
         console.log("removed IFRAME:"+ iframeDomain);
         targetelement.style.filter = Fl;
         targetelement.width = "32px";
-        targetelement.height = "32px";  
+        targetelement.height = "32px";
+        removeParentDiv(targetelement);
       }
     }
   }
   // 画像要素の場合
   else if(targetelement.tagName === 'IMG')
   {
-    // いったん何もしない
+    // いったん何もしない(ここまで処理すると発覚の恐れあり)
+  }
+  // 動画要素の場合
+  else if(targetelement.tagName === 'VIDEO')
+  {
+    // いったん何もしない(ここまで処理すると発覚の恐れあり)
   }
   // その他の要素の場合
   else if (targetelement.src)
   {
-    const elementDomain = new URL(targetelement.src).hostname;
-    if (checkDomain(elementDomain, splittedCurrentDomain))
+    if(!URL.canParse(targetelement.src))
     {
-      console.log("removed OTHER:"+ elementDomain);
-      if(targetelement.text)
+      console.log("removed " + targetelement.tagName + ", CANNOT PARSE URL:"+ targetelement.src);
+      removeParentDiv(targetelement);
+    }
+    else
+    {
+      const elementDomain = new URL(targetelement.src).hostname;
+      if (checkDomain(elementDomain, splittedCurrentDomain))
       {
-        targetelement.text = makeMbStr(targetelement.text);
-        targetelement.style.filter = Fl;
-        targetelement.width = "32px";
-        targetelement.height = "32px";  
-      }
-      else
-      {
-        // fail safe
-        console.log("removed OTHER but text is None"+ elementDomain);
-        targetelement.remove();
+        console.log("removed OTHER:"+ elementDomain);
+        if(targetelement.text)
+        {
+          targetelement.text = makeMbStr(targetelement.text);
+          targetelement.style.filter = Fl;
+          targetelement.width = "32px";
+          targetelement.height = "32px";
+        }
+        removeParentDiv(targetelement);
       }
     }
   }
@@ -219,6 +241,23 @@ function checkDomain(elementDomain, splittedCurrentDomain)
     }
   });
   return resultCnt != splittedCurrentDomain.length;
+}
+
+// 親要素の削除
+function removeParentDiv(element)
+{
+  /*
+  if(element?.parentElement !== null && element.parentElement?.tagName === 'DIV')
+  {
+    element.parentElement.remove();
+    for(const child of element.parentElement.children)
+    {
+      console.log("removed child:"+ element.parentElement.tagName);
+      child.remove();
+    }
+  }
+  */
+  element.remove();
 }
 
 // 処理関数
