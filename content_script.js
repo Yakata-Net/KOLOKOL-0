@@ -146,7 +146,7 @@ function processElement(targetelement, splittedCurrentDomain, zMode)
   // リンク要素の場合
   if (targetelement.tagName === 'A' && targetelement.href && !targetelement.href.includes("javascript:"))
   {
-    if(!URL.canParse(targetelement.href))
+    if(!URL?.canParse(targetelement.href))
     {
       console.log("removed href, CANNOT PARSE URL:"+ targetelement.href);
       removeParentDiv(targetelement);
@@ -174,7 +174,7 @@ function processElement(targetelement, splittedCurrentDomain, zMode)
       targetelement.height = "32px";
       removeParentDiv(targetelement);
     }
-    else if(!URL.canParse(targetelement.src))
+    else if(!URL?.canParse(targetelement.src))
     {
       console.log("removed IFRAME, CANNOT PARSE URL:" + targetelement.src);
     }
@@ -204,7 +204,7 @@ function processElement(targetelement, splittedCurrentDomain, zMode)
   // その他の要素の場合
   else if (targetelement.src)
   {
-    if(!URL.canParse(targetelement.src))
+    if(!URL?.canParse(targetelement.src))
     {
       console.log("removed " + targetelement.tagName + ", CANNOT PARSE URL:"+ targetelement.src);
       removeParentDiv(targetelement);
