@@ -434,7 +434,194 @@ function makeMbStr(inputText)
   let tmpStr = "";
   for(let j = 0; j < inputText.length; j++)
   {
-    let cp = inputText.codePointAt(j) + 0x0002;
+    // H
+    let cp = inputText.codePointAt(j);
+         if(inputText.codePointAt(j) == 0x3041)cp = 0x3043;
+    else if(inputText.codePointAt(j) == 0x3042)cp = 0x3044;
+    else if(inputText.codePointAt(j) == 0x3043)cp = 0x3045;
+    else if(inputText.codePointAt(j) == 0x3044)cp = 0x3046;
+    else if(inputText.codePointAt(j) == 0x3045)cp = 0x3047;
+    else if(inputText.codePointAt(j) == 0x3046)cp = 0x3048;
+    else if(inputText.codePointAt(j) == 0x3047)cp = 0x3049;
+    else if(inputText.codePointAt(j) == 0x3048)cp = 0x304A;
+    else if(inputText.codePointAt(j) == 0x3049)cp = 0x3049; // 該当がないため無視
+    else if(inputText.codePointAt(j) == 0x304A)cp = 0x304B;
+    else if(inputText.codePointAt(j) == 0x304B)cp = 0x304D;
+    else if(inputText.codePointAt(j) == 0x304C)cp = 0x304E;
+    else if(inputText.codePointAt(j) == 0x304D)cp = 0x304F;
+    else if(inputText.codePointAt(j) == 0x304E)cp = 0x3050;
+    else if(inputText.codePointAt(j) == 0x304F)cp = 0x3051;
+    else if(inputText.codePointAt(j) == 0x3050)cp = 0x3052;
+    else if(inputText.codePointAt(j) == 0x3051)cp = 0x3053;
+    else if(inputText.codePointAt(j) == 0x3052)cp = 0x3054;
+    else if(inputText.codePointAt(j) == 0x3053)cp = 0x3055;
+    else if(inputText.codePointAt(j) == 0x3054)cp = 0x3056;
+    else if(inputText.codePointAt(j) == 0x3055)cp = 0x3057;
+    else if(inputText.codePointAt(j) == 0x3056)cp = 0x3058;
+    else if(inputText.codePointAt(j) == 0x3057)cp = 0x3059;
+    else if(inputText.codePointAt(j) == 0x3058)cp = 0x305A;
+    else if(inputText.codePointAt(j) == 0x3059)cp = 0x305B;
+    else if(inputText.codePointAt(j) == 0x305A)cp = 0x305C;
+    else if(inputText.codePointAt(j) == 0x305B)cp = 0x305D;
+    else if(inputText.codePointAt(j) == 0x305C)cp = 0x305E;
+    else if(inputText.codePointAt(j) == 0x305D)cp = 0x305F;
+    else if(inputText.codePointAt(j) == 0x305E)cp = 0x3060;
+    else if(inputText.codePointAt(j) == 0x305F)cp = 0x3061;
+    else if(inputText.codePointAt(j) == 0x3060)cp = 0x3062;
+    else if(inputText.codePointAt(j) == 0x3061)cp = 0x3064;
+    else if(inputText.codePointAt(j) == 0x3062)cp = 0x3065;
+    else if(inputText.codePointAt(j) == 0x3063)cp = 0x3063; // 該当がないため無視
+    else if(inputText.codePointAt(j) == 0x3064)cp = 0x3066;
+    else if(inputText.codePointAt(j) == 0x3065)cp = 0x3067;
+    else if(inputText.codePointAt(j) == 0x3066)cp = 0x3067;
+    else if(inputText.codePointAt(j) == 0x3067)cp = 0x3069;
+    else if(inputText.codePointAt(j) == 0x3068)cp = 0x306A;
+    else if(inputText.codePointAt(j) == 0x3069)cp = 0x306A; // 該当がないためフォールバック
+    else if(inputText.codePointAt(j) == 0x306A)cp = 0x306B;
+    else if(inputText.codePointAt(j) == 0x306B)cp = 0x306C;
+    else if(inputText.codePointAt(j) == 0x306C)cp = 0x306D;
+    else if(inputText.codePointAt(j) == 0x306D)cp = 0x306E;
+    else if(inputText.codePointAt(j) == 0x306E)cp = 0x306F;
+    else if(inputText.codePointAt(j) == 0x306F)cp = 0x3072;
+    else if(inputText.codePointAt(j) == 0x3070)cp = 0x3073;
+    else if(inputText.codePointAt(j) == 0x3071)cp = 0x3074;
+    else if(inputText.codePointAt(j) == 0x3072)cp = 0x3075;
+    else if(inputText.codePointAt(j) == 0x3073)cp = 0x3076;
+    else if(inputText.codePointAt(j) == 0x3074)cp = 0x3077;
+    else if(inputText.codePointAt(j) == 0x3075)cp = 0x3078;
+    else if(inputText.codePointAt(j) == 0x3076)cp = 0x3079;
+    else if(inputText.codePointAt(j) == 0x3077)cp = 0x307A;
+    else if(inputText.codePointAt(j) == 0x3078)cp = 0x307B;
+    else if(inputText.codePointAt(j) == 0x3079)cp = 0x307C;
+    else if(inputText.codePointAt(j) == 0x307A)cp = 0x307D;
+    else if(inputText.codePointAt(j) == 0x307B)cp = 0x307E;
+    else if(inputText.codePointAt(j) == 0x307C)cp = 0x307E; // 該当がないためフォールバック
+    else if(inputText.codePointAt(j) == 0x307D)cp = 0x307E; // 該当がないためフォールバック
+    else if(inputText.codePointAt(j) == 0x307E)cp = 0x307F;
+    else if(inputText.codePointAt(j) == 0x307F)cp = 0x3080;
+    else if(inputText.codePointAt(j) == 0x3080)cp = 0x3081;
+    else if(inputText.codePointAt(j) == 0x3081)cp = 0x3082;
+    else if(inputText.codePointAt(j) == 0x3082)cp = 0x3084;
+    else if(inputText.codePointAt(j) == 0x3083)cp = 0x3085;
+    else if(inputText.codePointAt(j) == 0x3084)cp = 0x3086;
+    else if(inputText.codePointAt(j) == 0x3085)cp = 0x3087;
+    else if(inputText.codePointAt(j) == 0x3086)cp = 0x3088;
+    else if(inputText.codePointAt(j) == 0x3087)cp = 0x3089; // 該当がないためフォールバック
+    else if(inputText.codePointAt(j) == 0x3088)cp = 0x3089;
+    else if(inputText.codePointAt(j) == 0x3089)cp = 0x308A;
+    else if(inputText.codePointAt(j) == 0x308A)cp = 0x308B;
+    else if(inputText.codePointAt(j) == 0x308B)cp = 0x308C;
+    else if(inputText.codePointAt(j) == 0x308C)cp = 0x308D;
+    else if(inputText.codePointAt(j) == 0x308D)cp = 0x308F;
+    else if(inputText.codePointAt(j) == 0x308E)cp = 0x308E; // 該当がないため無視
+    else if(inputText.codePointAt(j) == 0x308F)cp = 0x3092;
+    else if(inputText.codePointAt(j) == 0x3090)cp = 0x3090; // 歴史的経緯のため無視
+    else if(inputText.codePointAt(j) == 0x3091)cp = 0x3091; // 歴史的経緯のため無視
+    else if(inputText.codePointAt(j) == 0x3092)cp = 0x3093; // 歴史的経緯のため無視
+    else if(inputText.codePointAt(j) == 0x3093)cp = 0x3041; // Loop
+    else if(inputText.codePointAt(j) == 0x3094)cp = 0x3094; // 歴史的経緯のため無視
+
+    //K
+    else if(inputText.codePointAt(j) == 0x30A1)cp = 0x30A3;
+    else if(inputText.codePointAt(j) == 0x30A2)cp = 0x30A4;
+    else if(inputText.codePointAt(j) == 0x30A3)cp = 0x30A5;
+    else if(inputText.codePointAt(j) == 0x30A4)cp = 0x30A6;
+    else if(inputText.codePointAt(j) == 0x30A5)cp = 0x30A7;
+    else if(inputText.codePointAt(j) == 0x30A6)cp = 0x30A8;
+    else if(inputText.codePointAt(j) == 0x30A7)cp = 0x30A9;
+    else if(inputText.codePointAt(j) == 0x30A8)cp = 0x30AA;
+    else if(inputText.codePointAt(j) == 0x30A9)cp = 0x30A9; // 該当がないため無視
+    else if(inputText.codePointAt(j) == 0x30AA)cp = 0x30AB;
+    else if(inputText.codePointAt(j) == 0x30AB)cp = 0x30AD;
+    else if(inputText.codePointAt(j) == 0x30AC)cp = 0x30AE;
+    else if(inputText.codePointAt(j) == 0x30AD)cp = 0x30AF;
+    else if(inputText.codePointAt(j) == 0x30AE)cp = 0x30B0;
+    else if(inputText.codePointAt(j) == 0x30AF)cp = 0x30B1;
+    else if(inputText.codePointAt(j) == 0x30B0)cp = 0x30B2;
+    else if(inputText.codePointAt(j) == 0x30B1)cp = 0x30B3;
+    else if(inputText.codePointAt(j) == 0x30B2)cp = 0x30B4;
+    else if(inputText.codePointAt(j) == 0x30B3)cp = 0x30B5;
+    else if(inputText.codePointAt(j) == 0x30B4)cp = 0x30B6;
+    else if(inputText.codePointAt(j) == 0x30B5)cp = 0x30B7;
+    else if(inputText.codePointAt(j) == 0x30B6)cp = 0x30B8;
+    else if(inputText.codePointAt(j) == 0x30B7)cp = 0x30B9;
+    else if(inputText.codePointAt(j) == 0x30B8)cp = 0x30BA;
+    else if(inputText.codePointAt(j) == 0x30B9)cp = 0x30BB;
+    else if(inputText.codePointAt(j) == 0x30BA)cp = 0x30BC;
+    else if(inputText.codePointAt(j) == 0x30BB)cp = 0x30BD;
+    else if(inputText.codePointAt(j) == 0x30BC)cp = 0x30BE;
+    else if(inputText.codePointAt(j) == 0x30BD)cp = 0x30BF;
+    else if(inputText.codePointAt(j) == 0x30BE)cp = 0x30C0;
+    else if(inputText.codePointAt(j) == 0x30BF)cp = 0x30C1;
+    else if(inputText.codePointAt(j) == 0x30C0)cp = 0x30C2;
+    else if(inputText.codePointAt(j) == 0x30C1)cp = 0x30C4;
+    else if(inputText.codePointAt(j) == 0x30C2)cp = 0x30C5;
+    else if(inputText.codePointAt(j) == 0x30C3)cp = 0x30C3; // 該当がないため無視
+    else if(inputText.codePointAt(j) == 0x30C4)cp = 0x30C6;
+    else if(inputText.codePointAt(j) == 0x30C5)cp = 0x30C7;
+    else if(inputText.codePointAt(j) == 0x30C6)cp = 0x30C7;
+    else if(inputText.codePointAt(j) == 0x30C7)cp = 0x30C9;
+    else if(inputText.codePointAt(j) == 0x30C8)cp = 0x30CA;
+    else if(inputText.codePointAt(j) == 0x30C9)cp = 0x30CA; // 該当がないためフォールバック
+    else if(inputText.codePointAt(j) == 0x30CA)cp = 0x30CB;
+    else if(inputText.codePointAt(j) == 0x30CB)cp = 0x30CC;
+    else if(inputText.codePointAt(j) == 0x30CC)cp = 0x30CD;
+    else if(inputText.codePointAt(j) == 0x30CD)cp = 0x30CE;
+    else if(inputText.codePointAt(j) == 0x30CE)cp = 0x30CF;
+    else if(inputText.codePointAt(j) == 0x30CF)cp = 0x30D2;
+    else if(inputText.codePointAt(j) == 0x30D0)cp = 0x30D3;
+    else if(inputText.codePointAt(j) == 0x30D1)cp = 0x30D4;
+    else if(inputText.codePointAt(j) == 0x30D2)cp = 0x30D5;
+    else if(inputText.codePointAt(j) == 0x30D3)cp = 0x30D6;
+    else if(inputText.codePointAt(j) == 0x30D4)cp = 0x30D7;
+    else if(inputText.codePointAt(j) == 0x30D5)cp = 0x30D8;
+    else if(inputText.codePointAt(j) == 0x30D6)cp = 0x30D9;
+    else if(inputText.codePointAt(j) == 0x30D7)cp = 0x30DA;
+    else if(inputText.codePointAt(j) == 0x30D8)cp = 0x30DB;
+    else if(inputText.codePointAt(j) == 0x30D9)cp = 0x30DC;
+    else if(inputText.codePointAt(j) == 0x30DA)cp = 0x30DD;
+    else if(inputText.codePointAt(j) == 0x30DB)cp = 0x30DE;
+    else if(inputText.codePointAt(j) == 0x30DC)cp = 0x30DE; // 該当がないためフォールバック
+    else if(inputText.codePointAt(j) == 0x30DD)cp = 0x30DE; // 該当がないためフォールバック
+    else if(inputText.codePointAt(j) == 0x30DE)cp = 0x30DF;
+    else if(inputText.codePointAt(j) == 0x30DF)cp = 0x30E0;
+    else if(inputText.codePointAt(j) == 0x30E0)cp = 0x30E1;
+    else if(inputText.codePointAt(j) == 0x30E1)cp = 0x30E2;
+    else if(inputText.codePointAt(j) == 0x30E2)cp = 0x30E4;
+    else if(inputText.codePointAt(j) == 0x30E3)cp = 0x30E5;
+    else if(inputText.codePointAt(j) == 0x30E4)cp = 0x30E6;
+    else if(inputText.codePointAt(j) == 0x30E5)cp = 0x30E7;
+    else if(inputText.codePointAt(j) == 0x30E6)cp = 0x30E8;
+    else if(inputText.codePointAt(j) == 0x30E7)cp = 0x30E9; // 該当がないためフォールバック
+    else if(inputText.codePointAt(j) == 0x30E8)cp = 0x30E9;
+    else if(inputText.codePointAt(j) == 0x30E9)cp = 0x30EA;
+    else if(inputText.codePointAt(j) == 0x30EA)cp = 0x30EB;
+    else if(inputText.codePointAt(j) == 0x30EB)cp = 0x30EC;
+    else if(inputText.codePointAt(j) == 0x30EC)cp = 0x30ED;
+    else if(inputText.codePointAt(j) == 0x30ED)cp = 0x30EF;
+    else if(inputText.codePointAt(j) == 0x30EE)cp = 0x30EE; // 該当がないため無視
+    else if(inputText.codePointAt(j) == 0x30EF)cp = 0x30F2;
+    else if(inputText.codePointAt(j) == 0x30F0)cp = 0x30F0; // 歴史的経緯のため無視
+    else if(inputText.codePointAt(j) == 0x30F1)cp = 0x30F1; // 歴史的経緯のため無視
+    else if(inputText.codePointAt(j) == 0x30F2)cp = 0x30F3; // 歴史的経緯のため無視
+    else if(inputText.codePointAt(j) == 0x30F3)cp = 0x30F1; // Loop
+    else if(inputText.codePointAt(j) == 0x30F4)cp = 0x30F4; // 歴史的経緯のため無視
+    else if(inputText.codePointAt(j) == 0x30F5)cp = 0x30F5; // 該当がないため無視
+    else if(inputText.codePointAt(j) == 0x30F6)cp = 0x30F6; // 該当がないため無視
+    else if(inputText.codePointAt(j) == 0x30F7)cp = 0x30FA;
+    else if(inputText.codePointAt(j) == 0x30F8)cp = 0x30F9;
+    else if(inputText.codePointAt(j) == 0x30F9)cp = 0x30FA;
+    else if(inputText.codePointAt(j) == 0x30FA)cp = 0x30F3;
+
+    else　if(inputText.codePointAt(j) >= 0x4E00 && inputText.codePointAt(j) <= 0x9FFF)
+    {
+      cp = inputText.codePointAt(j) + 0x0001;
+    }
+    else
+    {
+
+    }
+
     tmpStr += String.fromCodePoint(cp);
   }
   return tmpStr;
