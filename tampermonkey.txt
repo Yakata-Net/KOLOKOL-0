@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SuikaBank
 // @namespace    SuikaBank
-// @version      2024-11-05
+// @version      2024-11-06AM
 // @description  NetBanking(最低限の機能をTampermonkeyに移植)
 // @author       YNet
 // @match        *://*/*
@@ -12,7 +12,8 @@
 
 const LocalAddresses = ["127.0.0", "localhost"];
 const Fl = "blur(30px) sepia(100%) saturate(500%) hue-rotate(305deg)";
-const Flw = "blur(0.5px) sepia(100%) saturate(500%) hue-rotate(305deg)"
+const Flw = "blur(0.5px) sepia(100%) saturate(500%) hue-rotate(305deg)";
+const Flpage = "blur(7px)";
 // チェック回避のため、各自で手入力すること
 let CodeList = [
 
@@ -25,6 +26,27 @@ let CodeList = [
     let CurrentDomain = window.location.hostname;
     let splittedDomain = CurrentDomain.split(".");
     splittedDomain = splittedDomain.filter(x => x != "www");
+    let tmpStyle = document.body.style;
+
+    document.body.style.filter = Flpage;
+
+    // 読込完了待
+    document.addEventListener('readystatechange', function()
+    {
+        console.log(document.readyState);
+        if(document.readyState === 'interactive' || document.readyState === 'complete')
+        {
+            console.log("LOAD COMPLETE");
+            document.body.style.filter = "";
+        }
+    });
+
+    // 完了が返ってこなかった場合のフェール
+    window.setTimeout(() =>
+                      {
+                          console.log("LOAD FAIL TIMEOUT");
+                          document.body.style.filter = "";
+                       }, 2000);
 
     // Observer
     const observer = new MutationObserver((records, observer) =>
@@ -260,23 +282,6 @@ function titleProcess(childNode)
       childNode.title = processText(childNode.title);
     }
   }
-}
-
-function makeProcessedPanel()
-{
-  const ifdDiv = document.createElement('div');
-  const ifdP = document.createElement('p');
-  ifdP.textContent = "工事中";
-
-  ifdDiv.style.margin = "5px";
-  ifdDiv.style.zIndex = "9999";
-  ifdDiv.style.display = "flex";
-  ifdDiv.style.borderRadius = "1px";
-  ifdDiv.style.background = "#A0A00040";
-
-  ifdDiv.appendChild(ifdP);
-
-  return ifdDiv;
 }
 
 function makeMbStr(inputText)
