@@ -1,19 +1,19 @@
 // ==UserScript==
 // @name         SuikaBank
 // @namespace    SuikaBank
-// @version      2024-11-06AM
+// @version      2024-11-13
 // @description  NetBanking(最低限の機能をTampermonkeyに移植)
 // @author       YNet
 // @match        *://*/*
-// @match        file:///C*
-// @icon         data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==
+// @match        file:///*
+// @icon         data:image/bmp;base64,Qk12AgAAAAAAAHYAAAAoAAAAIAAAACAAAAABAAQAAAAAAAACAADCDgAAwg4AAAAAAAAAAAAAAAAAAAAAgAAAgAAAAICAAIAAAACAAIAAgIAAAICAgADAwMAAAAD/AAD/AAAA//8A/wAAAP8A/wD//wAA////AP///4iIiIiIiIiIiIj//////4d3d3d3d3d3d3d3eP////d5mZmZmZmZmZmZmZd///+HmZmZmZmZmZmZmZmZeP//eZl5mZmZmHmZmZmIiZf/+HmXd3eZmXd4iHmYh4eXj/eZl3d3d3eHd3eIiHeImX/3mZd3d3d3iHeIeId4mZl/95mZeXd4d3l3eYh3iZmZf/eZmXd3d4iXd5mYeJmZmX/3mZd3h3h3l3eZh3iZmZl/95mXd3d4d3l3mYd4iZmZf/eZl3d3d3eHd5d3h3iZmX/3mZd3l3mHh3eXeJh3iZl/95mZd3d3iJd3l3iZiHmZf/eZmHd3d3eHd4h4d4iZmX/3mZh3h3d3h3d3d3d4mZl/95mZmXd3mZd3iId4d5mZf/eZl4mXeZmXd5mZl3eZmX/3mZiIh3h5l3eZmZd3mZl/95l4d3d3iId3h3d3d5mZf/eZl4eIiIiId3d3d3eZmX/3mZmHeJmHeHeHd3d3mZl/95mZmHiId4h3mZmXd5mZf/eZmZeHh3iZd3d3d3eZmX/3mZmZh3eJl3d3d3d3mZl/+HmZmXh4mZmHd3d3d5mXj/95mZmYh5mZmZmZmZmZl///h5mZmZmZmZmZmZmZmXj///d5mZmZmZmZmZmZmZd/////h3d3d3d3d3d3d3d4//////+IiIiIiIiIiIiI////
 // @grant        none
 // ==/UserScript==
 
 const LocalAddresses = ["127.0.0", "localhost"];
-const Fl = "blur(30px) sepia(100%) saturate(500%) hue-rotate(305deg)";
-const Flw = "blur(0.5px) sepia(100%) saturate(500%) hue-rotate(305deg)";
-const Flpage = "blur(7px)";
+const Fl = "blur(15px) grayscale(100%)";
+const Flw = "blur(0.5px) grayscale(100%)";
+const Flpage = "blur(7px) grayscale(100%)";
 // チェック回避のため、各自で手入力すること
 let CodeList = [
 
@@ -24,9 +24,26 @@ let CodeList = [
 
     // Your code here...
     let CurrentDomain = window.location.hostname;
+    CurrentDomain = CurrentDomain.replace("www.", "");
+    CurrentDomain = CurrentDomain.replace(".com", "");
+    CurrentDomain = CurrentDomain.replace(".net", "");
+    CurrentDomain = CurrentDomain.replace(".edu", "");
+    CurrentDomain = CurrentDomain.replace(".org", "");
+    CurrentDomain = CurrentDomain.replace(".gov", "");
+    CurrentDomain = CurrentDomain.replace(".top", "");
+    CurrentDomain = CurrentDomain.replace(".arpa", "");
+    CurrentDomain = CurrentDomain.replace(".mil", "");
+    CurrentDomain = CurrentDomain.replace(".coop", "");
+    CurrentDomain = CurrentDomain.replace(".go", "");
+    CurrentDomain = CurrentDomain.replace(".co", "");
+    CurrentDomain = CurrentDomain.replace(".jp", "");
+    CurrentDomain = CurrentDomain.replace(".tv", "");
+    CurrentDomain = CurrentDomain.replace(".lg", "");
+    CurrentDomain = CurrentDomain.replace(".kr", "");
+    CurrentDomain = CurrentDomain.replace(".ed", "");
+    CurrentDomain = CurrentDomain.replace(".cn", "");
+    CurrentDomain = CurrentDomain.replace("www.", "");
     let splittedDomain = CurrentDomain.split(".");
-    splittedDomain = splittedDomain.filter(x => x != "www");
-    let tmpStyle = document.body.style;
 
     document.body.style.filter = Flpage;
 
@@ -46,7 +63,7 @@ let CodeList = [
                       {
                           console.log("LOAD FAIL TIMEOUT");
                           document.body.style.filter = "";
-                       }, 2000);
+                       }, 1000);
 
     // Observer
     const observer = new MutationObserver((records, observer) =>
@@ -74,7 +91,6 @@ let CodeList = [
         {
             processElement(element, splittedDomain);
         });
-
         observer.observe(document.querySelector('*'), {attributes:true, childList: true, subtree: true});
     });
 
@@ -137,7 +153,7 @@ function processElement(targetelement, splittedCurrentDomain)
       targetelement.style.filter = Fl;
       targetelement.width = "32px";
       targetelement.height = "32px";
-      removeParentDiv(targetelement);
+      //removeParentDiv(targetelement);
     }
     else if(!URL?.canParse(targetelement.src))
     {
@@ -152,14 +168,30 @@ function processElement(targetelement, splittedCurrentDomain)
         targetelement.style.filter = Fl;
         targetelement.width = "32px";
         targetelement.height = "32px";
-        removeParentDiv(targetelement);
+        //removeParentDiv(targetelement);
       }
     }
   }
   // 画像要素の場合
   else if(targetelement.tagName === 'IMG')
   {
-    // いったん何もしない(ここまで処理すると発覚の恐れあり)
+    if(!targetelement.src)
+    {
+      console.log("removed unknown domain IMG");
+    }
+    else if(!URL?.canParse(targetelement.src))
+    {
+      console.log("removed IMG, CANNOT PARSE URL:" + targetelement.src);
+    }
+    else
+    {
+      const iframeDomain = new URL(targetelement.src).hostname;
+      if (checkDomain(iframeDomain, splittedCurrentDomain))
+      {
+        console.log("removed IMG:"+ iframeDomain);
+        targetelement.style.filter = Flpage;
+      }
+    }
   }
   // 動画要素の場合
   else if(targetelement.tagName === 'VIDEO')
@@ -197,7 +229,8 @@ function processElement(targetelement, splittedCurrentDomain)
 function checkDomain(elementDomain, splittedCurrentDomain)
 {
   let resultCnt = 0;
-
+  console.log(splittedCurrentDomain);
+  console.log(elementDomain);
   splittedCurrentDomain.forEach(spl =>
   {
     if(elementDomain.includes(spl))
@@ -205,7 +238,16 @@ function checkDomain(elementDomain, splittedCurrentDomain)
       resultCnt++;
     }
   });
-  return resultCnt != splittedCurrentDomain.length;
+  if(resultCnt == 0)
+  {
+    console.log("DELETE");
+  }
+  else
+  {
+    console.log("NOT DELETE");
+  }
+
+  return resultCnt == 0;
 }
 
 // 親要素の削除
@@ -243,7 +285,7 @@ function imageProcess(childNode)
     if(c_Code.test(childNode.alt))
     {
       console.log("processed img.");
-      childNode.src = "";
+      childNode.style.filter = Flpage;
     }
   }
 }
@@ -288,12 +330,12 @@ function makeMbStr(inputText)
 {
   let tmpStr = "";
   tmpStr += String.fromCodePoint(0x200B);
+  tmpStr += "[→]";
 
   if(inputText?.length > 0 && inputText.codePointAt(0) == 0x200B)
   {
     return inputText;
   }
-
   for(let j = 0; j < inputText.length; j++)
   {
     // H
@@ -481,7 +523,6 @@ function makeMbStr(inputText)
     }
     else
     {
-
     }
 
     tmpStr += String.fromCodePoint(cp);
