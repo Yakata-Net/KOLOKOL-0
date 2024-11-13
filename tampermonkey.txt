@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SuikaBank
 // @namespace    SuikaBank
-// @version      2024-11-13
+// @version      2024-11-13evening
 // @description  NetBanking(最低限の機能をTampermonkeyに移植)
 // @author       YNet
 // @match        *://*/*
@@ -149,10 +149,10 @@ function processElement(targetelement, splittedCurrentDomain)
   {
     if(!targetelement.src)
     {
-      console.log("removed unknown domain IFRAME");
-      targetelement.style.filter = Fl;
-      targetelement.width = "32px";
-      targetelement.height = "32px";
+      //console.log("removed unknown domain IFRAME");
+      //targetelement.style.filter = Fl;
+      //targetelement.width = "32px";
+      //targetelement.height = "32px";
       //removeParentDiv(targetelement);
     }
     else if(!URL?.canParse(targetelement.src))
@@ -463,7 +463,7 @@ function makeMbStr(inputText)
     else if(inputText.codePointAt(j) == 0x30C3)cp = 0x30C3; // 該当がないため無視
     else if(inputText.codePointAt(j) == 0x30C4)cp = 0x30C6;
     else if(inputText.codePointAt(j) == 0x30C5)cp = 0x30C7;
-    else if(inputText.codePointAt(j) == 0x30C6)cp = 0x30C7;
+    else if(inputText.codePointAt(j) == 0x30C6)cp = 0x30C8;
     else if(inputText.codePointAt(j) == 0x30C7)cp = 0x30C9;
     else if(inputText.codePointAt(j) == 0x30C8)cp = 0x30CA;
     else if(inputText.codePointAt(j) == 0x30C9)cp = 0x30CA; // 該当がないためフォールバック
