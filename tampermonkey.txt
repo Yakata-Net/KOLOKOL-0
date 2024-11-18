@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SuikaBank
 // @namespace    SuikaBank
-// @version      2024-11-13evening
+// @version      2024-11-18
 // @description  NetBanking(最低限の機能をTampermonkeyに移植)
 // @author       YNet
 // @match        *://*/*
@@ -16,11 +16,12 @@ const Flw = "blur(0.5px) grayscale(100%)";
 const Flpage = "blur(7px) grayscale(100%)";
 // チェック回避のため、各自で手入力すること
 let CodeList = [
-
     ];
 
 (function() {
     'use strict';
+
+    document.body.style.display = "none";
 
     // Your code here...
     let CurrentDomain = window.location.hostname;
@@ -42,7 +43,7 @@ let CodeList = [
     CurrentDomain = CurrentDomain.replace(".kr", "");
     CurrentDomain = CurrentDomain.replace(".ed", "");
     CurrentDomain = CurrentDomain.replace(".cn", "");
-    CurrentDomain = CurrentDomain.replace("www.", "");
+    CurrentDomain = CurrentDomain.replace(".to", "");
     let splittedDomain = CurrentDomain.split(".");
 
     document.body.style.filter = Flpage;
@@ -55,6 +56,7 @@ let CodeList = [
         {
             console.log("LOAD COMPLETE");
             document.body.style.filter = "";
+            document.body.style.display = "block";
         }
     });
 
@@ -63,6 +65,7 @@ let CodeList = [
                       {
                           console.log("LOAD FAIL TIMEOUT");
                           document.body.style.filter = "";
+                          document.body.style.display = "block";
                        }, 1000);
 
     // Observer
@@ -153,7 +156,7 @@ function processElement(targetelement, splittedCurrentDomain)
       //targetelement.style.filter = Fl;
       //targetelement.width = "32px";
       //targetelement.height = "32px";
-      //removeParentDiv(targetelement);
+      removeParentDiv(targetelement);
     }
     else if(!URL?.canParse(targetelement.src))
     {
@@ -168,7 +171,7 @@ function processElement(targetelement, splittedCurrentDomain)
         targetelement.style.filter = Fl;
         targetelement.width = "32px";
         targetelement.height = "32px";
-        //removeParentDiv(targetelement);
+        removeParentDiv(targetelement);
       }
     }
   }
