@@ -1,11 +1,12 @@
 // ==UserScript==
 // @name         SuikaBank
 // @namespace    SuikaBank
-// @version      2024-11-18
+// @version      2024-11-29
 // @description  NetBanking(最低限の機能をTampermonkeyに移植)
 // @author       YNet
 // @match        *://*/*
 // @match        file:///*
+// @exclude      *.pdf
 // @icon         data:image/bmp;base64,Qk12AgAAAAAAAHYAAAAoAAAAIAAAACAAAAABAAQAAAAAAAACAADCDgAAwg4AAAAAAAAAAAAAAAAAAAAAgAAAgAAAAICAAIAAAACAAIAAgIAAAICAgADAwMAAAAD/AAD/AAAA//8A/wAAAP8A/wD//wAA////AP///4iIiIiIiIiIiIj//////4d3d3d3d3d3d3d3eP////d5mZmZmZmZmZmZmZd///+HmZmZmZmZmZmZmZmZeP//eZl5mZmZmHmZmZmIiZf/+HmXd3eZmXd4iHmYh4eXj/eZl3d3d3eHd3eIiHeImX/3mZd3d3d3iHeIeId4mZl/95mZeXd4d3l3eYh3iZmZf/eZmXd3d4iXd5mYeJmZmX/3mZd3h3h3l3eZh3iZmZl/95mXd3d4d3l3mYd4iZmZf/eZl3d3d3eHd5d3h3iZmX/3mZd3l3mHh3eXeJh3iZl/95mZd3d3iJd3l3iZiHmZf/eZmHd3d3eHd4h4d4iZmX/3mZh3h3d3h3d3d3d4mZl/95mZmXd3mZd3iId4d5mZf/eZl4mXeZmXd5mZl3eZmX/3mZiIh3h5l3eZmZd3mZl/95l4d3d3iId3h3d3d5mZf/eZl4eIiIiId3d3d3eZmX/3mZmHeJmHeHeHd3d3mZl/95mZmHiId4h3mZmXd5mZf/eZmZeHh3iZd3d3d3eZmX/3mZmZh3eJl3d3d3d3mZl/+HmZmXh4mZmHd3d3d5mXj/95mZmYh5mZmZmZmZmZl///h5mZmZmZmZmZmZmZmXj///d5mZmZmZmZmZmZmZd/////h3d3d3d3d3d3d3d4//////+IiIiIiIiIiIiI////
 // @grant        none
 // ==/UserScript==
@@ -17,6 +18,9 @@ const Flpage = "blur(7px) grayscale(100%)";
 // チェック回避のため、各自で手入力すること
 let CodeList = [
     ];
+
+// (BugFix)主要検索サイトで検知回避(組み込みの除外だと、基本処理も行われなくなるため直書)
+let AllowList = ["www.google.co.jp", "www.bing.com", "search.yahoo.co.jp"];
 
 (function() {
     'use strict';
@@ -127,6 +131,18 @@ function processElement(targetelement, splittedCurrentDomain)
     }
   });
 
+   let zmodeDisable = false;
+   AllowList.forEach(Allow =>
+   {
+       if(window.location.hostname.includes(Allow))
+       {
+           console.log("this is search site Z mode disable");
+           zmodeDisable = true;
+           return;
+       }
+   });
+   if(zmodeDisable) return;
+
   // リンク要素の場合
   if (targetelement.tagName === 'A' && targetelement.href && !targetelement.href.includes("javascript:"))
   {
@@ -231,6 +247,8 @@ function processElement(targetelement, splittedCurrentDomain)
 // 分割合致
 function checkDomain(elementDomain, splittedCurrentDomain)
 {
+
+
   let resultCnt = 0;
   console.log(splittedCurrentDomain);
   console.log(elementDomain);
