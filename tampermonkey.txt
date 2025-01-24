@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SuikaBank
 // @namespace    SuikaBank
-// @version      2025-1-20
+// @version      2025-1-24
 // @description  NetBanking(最低限の機能をTampermonkeyに移植)
 // @author       YNet
 // @match        *://*/*
@@ -34,10 +34,18 @@ const WdList =
     [
         "ob-",
         "ob_",
+        "res_",
+        "gn_v",
         "lift-ad",
         "loaded",
         "playback",
-        "GoogleActiveView"
+        "GoogleActiveView",
+        "d_position",
+        "mediago",
+        "in-ad",
+        "ad_pos",
+        //"ns-",
+        "delivery"
     ];
 const NotCheckDomainList =
       [
@@ -161,6 +169,12 @@ function processElement(targetelement, splittedCurrentDomain)
     }
   });
 
+  if(checkWd(targetelement))
+  {
+      removeDiv(targetelement);
+      return;
+  }
+
   // iframe要素の場合
   if (targetelement.tagName === 'IFRAME')
   {
@@ -254,6 +268,12 @@ function processElement2(targetelement, splittedCurrentDomain)
     {
         console.log("removed element(Processed 1):"+ childNode);
         removeDiv(childNode);
+    }
+
+    if(checkWd(targetelement))
+    {
+        removeDiv(targetelement);
+        return;
     }
   });
 }
@@ -391,4 +411,3 @@ function titleProcess(childNode)
     }
   }
 }
-
