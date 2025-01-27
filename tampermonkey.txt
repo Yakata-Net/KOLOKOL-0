@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SuikaBank
 // @namespace    SuikaBank
-// @version      2025-1-24
+// @version      2025-1-24b-fix
 // @description  NetBanking(最低限の機能をTampermonkeyに移植)
 // @author       YNet
 // @match        *://*/*
@@ -44,7 +44,7 @@ const WdList =
         "mediago",
         "in-ad",
         "ad_pos",
-        //"ns-",
+        "ns-",
         "delivery"
     ];
 const NotCheckDomainList =
@@ -169,8 +169,25 @@ function processElement(targetelement, splittedCurrentDomain)
     }
   });
 
-  if(checkWd(targetelement))
+  // Parent
+  let img = imageProcess(targetelement);
+  let href = hrefProcess(targetelement);
+  let title = titleProcess(targetelement);
+
+  let text = false;
+  if(targetelement.nodeType == Node.TEXT_NODE)
   {
+    let before = targetelement.textContent;
+    targetelement.textContent = processText(targetelement.textContent);
+    if(before !== targetelement.textContent)
+    {
+        text = true;
+    }
+  }
+
+  if(img || href || title || text || checkWd(targetelement))
+  {
+      console.log("removed parent element(Processed 1):"+ targetelement);
       removeDiv(targetelement);
       return;
   }
@@ -203,10 +220,14 @@ function processElement(targetelement, splittedCurrentDomain)
     if(!targetelement.src)
     {
       console.log("removed unknown domain IMG");
+      targetelement.style.filter = Fl;
+      //removeDiv(targetelement);
     }
     else if(!URL?.canParse(targetelement.src))
     {
       console.log("removed IMG, CANNOT PARSE URL:" + targetelement.src);
+      targetelement.style.filter = Fl;
+      //removeDiv(targetelement);
     }
     else
     {
@@ -273,9 +294,31 @@ function processElement2(targetelement, splittedCurrentDomain)
     if(checkWd(targetelement))
     {
         removeDiv(targetelement);
-        return;
     }
   });
+
+  // Parent
+  let img = imageProcess(targetelement);
+  let href = hrefProcess(targetelement);
+  let title = titleProcess(targetelement);
+
+  let text = false;
+  if(targetelement.nodeType == Node.TEXT_NODE)
+  {
+    let before = targetelement.textContent;
+    targetelement.textContent = processText(targetelement.textContent);
+    if(before !== targetelement.textContent)
+    {
+        text = true;
+    }
+  }
+
+  if(img || href || title || text || checkWd(targetelement))
+  {
+      console.log("removed parent element(Processed 1):"+ targetelement);
+      removeDiv(targetelement);
+      return;
+  }
 }
 
 // 分割合致
