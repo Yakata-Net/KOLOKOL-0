@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SuikaBank
 // @namespace    SuikaBank
-// @version      2025-1-24b-fix
+// @version      2025-1-28
 // @description  NetBanking(最低限の機能をTampermonkeyに移植)
 // @author       YNet
 // @match        *://*/*
@@ -87,16 +87,7 @@ const NotCheckDomainList =
         }
     });
 
-    // 完了が返ってこなかった場合のフェール
-    window.setTimeout(() =>
-                      {
-                          console.log("LOAD FAIL TIMEOUT");
-                          document.body.style.filter = "";
-                          document.body.style.display = "block";
-                       }, 1000);
-
     let processFunc = arrow ? processElement2 : processElement;
-
     // Observer
     const observer = new MutationObserver((records, observer) =>
     {
@@ -123,11 +114,27 @@ const NotCheckDomainList =
         {
             processFunc(element, splittedDomain);
         });
-        observer.observe(document.querySelector('*'), {attributes:true, childList: true, subtree: true});
+        observer.observe(document.querySelector('*'), {attributes:true, childList: true, subtree: true, characterData: true});
     });
 
+    // 完了が返ってこなかった場合のフェール
+    window.setTimeout(() =>
+                      {
+                          console.log("LOAD FAIL TIMEOUT start double check");
+                          document.body.style.filter = "";
+                          document.body.style.display = "block";
+
+                          // 検知逃れ防止のためもう一度後チェック
+                          const elements = document.querySelectorAll('*');
+                          elements.forEach(element =>
+                          {
+                              processFunc(element, splittedDomain);
+                          });
+                          observer.observe(document.querySelector('*'), {attributes:true, childList: true, subtree: true, characterData: true});
+                       }, 1000);
+
     // 動的に追加された箇所も処理
-    observer.observe(document.querySelector('*'), {attributes:true, childList: true, subtree: true});
+    observer.observe(document.querySelector('*'), {attributes:true, childList: true, subtree: true, characterData: true});
 
     // 最初に表示された部分の処理
     // すべての要素を取得、処理実施
