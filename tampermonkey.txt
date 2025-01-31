@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SuikaBank
 // @namespace    SuikaBank
-// @version      2025-1-28
+// @version      2025-1-31F
 // @description  NetBanking(最低限の機能をTampermonkeyに移植)
 // @author       YNet
 // @match        *://*/*
@@ -32,20 +32,16 @@ const CodeList = [
     ];
 const WdList =
     [
-        "ob-",
-        "ob_",
-        "res_",
-        "gn_v",
-        "lift-ad",
-        "loaded",
-        "playback",
-        "GoogleActiveView",
-        "d_position",
-        "mediago",
-        "in-ad",
-        "ad_pos",
-        "ns-",
-        "delivery"
+        "^ob-",
+        "^ad$",
+        "^adsby",
+        "^ns-[0-9]{3,}",
+        "^GoogleActiveView",
+        "^logly",
+        "^ydn$",
+        "^AD_",
+        "_ads_",
+        "^ysp$"
     ];
 const NotCheckDomainList =
       [
@@ -54,7 +50,6 @@ const NotCheckDomainList =
 
 (function() {
     'use strict';
-
     // Your code here...
     document.addEventListener("DOMContentLoaded", function()
     {
@@ -79,11 +74,15 @@ const NotCheckDomainList =
     document.addEventListener('readystatechange', function()
     {
         console.log(document.readyState);
-        if(document.readyState === 'interactive' || document.readyState === 'complete')
+        if(document.readyState === 'complete')
         {
             console.log("LOAD COMPLETE");
             document.body.style.filter = "";
             document.body.style.display = "block";
+        }
+        else
+        {
+            document.body.style.filter = Flpage;
         }
     });
 
@@ -114,7 +113,7 @@ const NotCheckDomainList =
         {
             processFunc(element, splittedDomain);
         });
-        observer.observe(document.querySelector('*'), {attributes:true, childList: true, subtree: true, characterData: true});
+        observer.observe(document, {attributes:true, childList: true, subtree: true, characterData: true});
     });
 
     // 完了が返ってこなかった場合のフェール
@@ -130,11 +129,11 @@ const NotCheckDomainList =
                           {
                               processFunc(element, splittedDomain);
                           });
-                          observer.observe(document.querySelector('*'), {attributes:true, childList: true, subtree: true, characterData: true});
+                          observer.observe(document, {attributes:true, childList: true, subtree: true, characterData: true});
                        }, 1000);
 
     // 動的に追加された箇所も処理
-    observer.observe(document.querySelector('*'), {attributes:true, childList: true, subtree: true, characterData: true});
+    observer.observe(document, {attributes:true, childList: true, subtree: true, characterData: true});
 
     // 最初に表示された部分の処理
     // すべての要素を取得、処理実施
@@ -350,9 +349,12 @@ function checkWd(element)
            let resultCnt = 0;
            element.classList.forEach(cls =>
            {
-               if(cls.includes(wd))
+               let c_Code = new RegExp(wd, 'g');
+               if(c_Code.test(cls))
                {
+                   console.log("checkWd(class):resultcnt++"+ cls);
                    resultCnt++;
+                   return;
                }
            });
            return resultCnt > 0;
@@ -365,20 +367,30 @@ function checkWd(element)
     {
         idCmp = WdList.some(wd =>
         {
-            element.id.includes(wd)
+            let c_Code = new RegExp(wd, 'g');
+            c_Code.test(element.id);
         });
     }
-    if(idCmp) return true;
+    if(idCmp)
+    {
+        console.log("checkWd(id):resultcnt++"+ element?.id);
+        return true;
+    }
 
     let textCmp = false;
     if(element?.textContent)
     {
         textCmp = WdList.some(wd =>
         {
-            element.textContent.includes(wd)
+            let c_Code = new RegExp(wd, 'g');
+            c_Code.test(element.textContent)
         });
     }
-    if(textCmp) return true;
+    if(textCmp)
+    {
+        console.log("checkWd(text):resultcnt++"+ element?.textContent);
+        return true;
+    }
 
     return false;
 }
