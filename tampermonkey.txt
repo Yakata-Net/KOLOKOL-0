@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SuikaBank
 // @namespace    SuikaBank
-// @version      2025-1-31F
+// @version      2025-3-17e
 // @description  NetBanking(最低限の機能をTampermonkeyに移植)
 // @author       YNet
 // @match        *://*/*
@@ -28,8 +28,11 @@ const Fl = "blur(15px) grayscale(100%)";
 const Flw = "blur(0.5px) grayscale(100%)";
 const Flpage = "blur(7px) grayscale(100%)";
 // チェック回避のため、各自で手入力すること
-const CodeList = [
+const CodeListC0 = [
     ];
+const CodeListC1 = [
+    ];
+// ここまで
 const WdList =
     [
         "^ob-",
@@ -51,9 +54,20 @@ const NotCheckDomainList =
 (function() {
     'use strict';
     // Your code here...
-    document.addEventListener("DOMContentLoaded", function()
+    // 読込完了待
+    document.addEventListener('readystatechange', function()
     {
-        document.body.style.filter = Flpage;
+        console.log(document.readyState);
+        if(document.readyState === 'interactive' || document.readyState === 'complete')
+        {
+            console.log("TREE LOAD COMPLETE");
+            document.body.style.filter = "";
+            document.body.style.display = "block";
+        }
+        else
+        {
+            document.body.style.filter = Flpage;
+        }
     });
 
     let CurrentDomain = window.location.hostname;
@@ -69,22 +83,6 @@ const NotCheckDomainList =
         window.location.hostname.includes(arrowstr);
     });
     if(arrow) console.log("in arrow list");
-
-    // 読込完了待
-    document.addEventListener('readystatechange', function()
-    {
-        console.log(document.readyState);
-        if(document.readyState === 'complete')
-        {
-            console.log("LOAD COMPLETE");
-            document.body.style.filter = "";
-            document.body.style.display = "block";
-        }
-        else
-        {
-            document.body.style.filter = Flpage;
-        }
-    });
 
     let processFunc = arrow ? processElement2 : processElement;
     // Observer
@@ -119,6 +117,7 @@ const NotCheckDomainList =
     // 完了が返ってこなかった場合のフェール
     window.setTimeout(() =>
                       {
+                          observer.disconnect();
                           console.log("LOAD FAIL TIMEOUT start double check");
                           document.body.style.filter = "";
                           document.body.style.display = "block";
@@ -130,7 +129,7 @@ const NotCheckDomainList =
                               processFunc(element, splittedDomain);
                           });
                           observer.observe(document, {attributes:true, childList: true, subtree: true, characterData: true});
-                       }, 1000);
+                       }, 2000);
 
     // 動的に追加された箇所も処理
     observer.observe(document, {attributes:true, childList: true, subtree: true, characterData: true});
@@ -161,10 +160,14 @@ function processElement(targetelement, splittedCurrentDomain)
     if(childNode.nodeType == Node.TEXT_NODE)
     {
       let before = childNode.textContent;
-      childNode.textContent = processText(childNode.textContent);
+      childNode.textContent = processTextC0(childNode.textContent);
       if(before !== childNode.textContent)
       {
           text = true;
+      }
+      else
+      {
+          childNode.textContent = processTextC1(childNode.textContent);
       }
     }
 
@@ -184,10 +187,14 @@ function processElement(targetelement, splittedCurrentDomain)
   if(targetelement.nodeType == Node.TEXT_NODE)
   {
     let before = targetelement.textContent;
-    targetelement.textContent = processText(targetelement.textContent);
+    targetelement.textContent = processTextC0(targetelement.textContent);
     if(before !== targetelement.textContent)
     {
         text = true;
+    }
+    else
+    {
+        targetelement.textContent = processTextC1(targetelement.textContent);
     }
   }
 
@@ -284,10 +291,14 @@ function processElement2(targetelement, splittedCurrentDomain)
     if(childNode.nodeType == Node.TEXT_NODE)
     {
       let before = childNode.textContent;
-      childNode.textContent = processText(childNode.textContent);
+      childNode.textContent = processTextC0(childNode.textContent);
       if(before !== childNode.textContent)
       {
           text = true;
+      }
+      else
+      {
+          childNode.textContent = processTextC1(childNode.textContent);
       }
     }
 
@@ -312,10 +323,14 @@ function processElement2(targetelement, splittedCurrentDomain)
   if(targetelement.nodeType == Node.TEXT_NODE)
   {
     let before = targetelement.textContent;
-    targetelement.textContent = processText(targetelement.textContent);
+    targetelement.textContent = processTextC0(targetelement.textContent);
     if(before !== targetelement.textContent)
     {
         text = true;
+    }
+    else
+    {
+        targetelement.textContent = processTextC1(targetelement.textContent);
     }
   }
 
@@ -402,20 +417,37 @@ function removeDiv(element)
 }
 
 // 処理関数
-function processText(text)
+function processTextC0(text)
 {
   // 処理部分。ストア・セキュリティソフトの検査をすり抜けるため、ここは外部から設定するようにする。
   // 将来的には、リモートで書き換え・任意コード実行ができるようにする
-  for(let i = 0; i < CodeList.length; i++)
+  for(let i = 0; i < CodeListC0.length; i++)
   {
     let preProcessString = text;
 
-    let c_Code = new RegExp(CodeList[i], 'g');
-    text = text.replace(c_Code, "");
+    let c_Code = new RegExp(CodeListC0[i].wd, 'g');
+    text = text.replace(c_Code, CodeListC0[i].pd);
     if(preProcessString != text)
     {
-      text = "";
+      text = CodeListC0[i].pd;
     }
+  }
+
+  return text;
+}
+
+// COとは微妙に処理を変えている
+function processTextC1(text)
+{
+
+
+  // C0同様に将来的には、リモートで書き換え・任意コード実行ができるようにする
+  for(let i = 0; i < CodeListC1.length; i++)
+  {
+    let c_Code = new RegExp(CodeListC1[i].wd, 'g');
+    let strlength = 3;
+    let pd = CodeListC1[i].pd.repeat(strlength);
+    text = text.replaceAll(c_Code, pd);
   }
 
   return text;
@@ -424,9 +456,9 @@ function processText(text)
 // 画像処理
 function imageProcess(childNode)
 {
-  for(let i = 0; i < CodeList.length; i++)
+  for(let i = 0; i < CodeListC0.length; i++)
   {
-    let c_Code = new RegExp(CodeList[i], 'g');
+    let c_Code = new RegExp(CodeListC0[i].wd, 'g');
     if(c_Code.test(childNode.alt))
     {
       childNode.src = "";
@@ -446,12 +478,12 @@ function hrefProcess(childNode)
   try { beforeHref = decodeURI(childNode.href); }
   catch(e) { console.log("URL Decode ERROR:" + childNode.href); }
 
-  for(let i = 0; i < CodeList.length; i++)
+  for(let i = 0; i < CodeListC0.length; i++)
   {
-    let c_Code = new RegExp(CodeList[i], 'g');
+    let c_Code = new RegExp(CodeListC0[i].wd, 'g');
     if(c_Code.test(beforeHref))
     {
-      let afterHref = "";
+      let afterHref = CodeListC0[i].pd;
       childNode.href = encodeURI(afterHref);
       return true;
     }
@@ -463,12 +495,12 @@ function titleProcess(childNode)
 {
   if(childNode.title == null) return false;
 
-  for(let i = 0; i < CodeList.length; i++)
+  for(let i = 0; i < CodeListC0.length; i++)
   {
-    let c_Code = new RegExp(CodeList[i], 'g');
+    let c_Code = new RegExp(CodeListC0[i].wd, 'g');
     if(c_Code.test(childNode.title))
     {
-      childNode.title = processText(childNode.title);
+      childNode.title = processTextC0(childNode.title);
       return true;
     }
   }
