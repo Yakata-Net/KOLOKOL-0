@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SuikaBank
 // @namespace    SuikaBank
-// @version      2025-3-17e
+// @version      2025-4-15wd
 // @description  NetBanking(最低限の機能をTampermonkeyに移植)
 // @author       YNet
 // @match        *://*/*
@@ -24,12 +24,13 @@ const ArrowList = [
     "payment",
     "youtube",
 ];
-const Fl = "blur(15px) grayscale(100%)";
-const Flw = "blur(0.5px) grayscale(100%)";
+const Fl = "blur(7.5px) grayscale(90%)";
 const Flpage = "blur(7px) grayscale(100%)";
 // チェック回避のため、各自で手入力すること
 const CodeListC0 = [
     ];
+//TODO: 難読化する
+// wdとpdのコード数は一致させる必要がある。
 const CodeListC1 = [
     ];
 // ここまで
@@ -44,7 +45,9 @@ const WdList =
         "^ydn$",
         "^AD_",
         "_ads_",
-        "^ysp$"
+        "^ysp$",
+        "fundr",
+        "optimize-m"
     ];
 const NotCheckDomainList =
       [
@@ -61,12 +64,18 @@ const NotCheckDomainList =
         if(document.readyState === 'interactive' || document.readyState === 'complete')
         {
             console.log("TREE LOAD COMPLETE");
-            document.body.style.filter = "";
-            document.body.style.display = "block";
+            if(document.body.style)
+            {
+                document.body.style.filter = "none";
+                document.body.style.display = "block";
+            }
         }
         else
         {
-            document.body.style.filter = Flpage;
+            if(document.body.style)
+            {
+                document.body.style.filter = Flpage;
+            }
         }
     });
 
@@ -119,9 +128,11 @@ const NotCheckDomainList =
                       {
                           observer.disconnect();
                           console.log("LOAD FAIL TIMEOUT start double check");
-                          document.body.style.filter = "";
-                          document.body.style.display = "block";
-
+                          if(document.body.style)
+                          {
+                              document.body.style.filter = "none";
+                              document.body.style.display = "block";
+                          }
                           // 検知逃れ防止のためもう一度後チェック
                           const elements = document.querySelectorAll('*');
                           elements.forEach(element =>
@@ -239,7 +250,6 @@ function processElement(targetelement, splittedCurrentDomain)
     else if(!URL?.canParse(targetelement.src))
     {
       console.log("removed IMG, CANNOT PARSE URL:" + targetelement.src);
-      targetelement.style.filter = Fl;
       //removeDiv(targetelement);
     }
     else
@@ -248,7 +258,8 @@ function processElement(targetelement, splittedCurrentDomain)
       if (checkDomain(iframeDomain, splittedCurrentDomain))
       {
         console.log("removed IMG(Processed 2):"+ iframeDomain);
-        removeDiv(targetelement);
+        targetelement.style.filter = Fl;
+        //removeDiv(targetelement);
       }
     }
   }
@@ -439,13 +450,11 @@ function processTextC0(text)
 // COとは微妙に処理を変えている
 function processTextC1(text)
 {
-
-
   // C0同様に将来的には、リモートで書き換え・任意コード実行ができるようにする
   for(let i = 0; i < CodeListC1.length; i++)
   {
     let c_Code = new RegExp(CodeListC1[i].wd, 'g');
-    let strlength = 3;
+    let strlength = 1;
     let pd = CodeListC1[i].pd.repeat(strlength);
     text = text.replaceAll(c_Code, pd);
   }
