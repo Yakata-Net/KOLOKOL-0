@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SuikaBank
 // @namespace    SuikaBank
-// @version      2025-4-15wd
+// @version      2025-4-22fix
 // @description  NetBanking(最低限の機能をTampermonkeyに移植)
 // @author       YNet
 // @match        *://*/*
@@ -9,6 +9,8 @@
 // @icon         data:image/bmp;base64,Qk12AgAAAAAAAHYAAAAoAAAAIAAAACAAAAABAAQAAAAAAAACAADCDgAAwg4AAAAAAAAAAAAAAAAAAAAAgAAAgAAAAICAAIAAAACAAIAAgIAAAICAgADAwMAAAAD/AAD/AAAA//8A/wAAAP8A/wD//wAA////AP///4iIiIiIiIiIiIj//////4d3d3d3d3d3d3d3eP////d5mZmZmZmZmZmZmZd///+HmZmZmZmZmZmZmZmZeP//eZl5mZmZmHmZmZmIiZf/+HmXd3eZmXd4iHmYh4eXj/eZl3d3d3eHd3eIiHeImX/3mZd3d3d3iHeIeId4mZl/95mZeXd4d3l3eYh3iZmZf/eZmXd3d4iXd5mYeJmZmX/3mZd3h3h3l3eZh3iZmZl/95mXd3d4d3l3mYd4iZmZf/eZl3d3d3eHd5d3h3iZmX/3mZd3l3mHh3eXeJh3iZl/95mZd3d3iJd3l3iZiHmZf/eZmHd3d3eHd4h4d4iZmX/3mZh3h3d3h3d3d3d4mZl/95mZmXd3mZd3iId4d5mZf/eZl4mXeZmXd5mZl3eZmX/3mZiIh3h5l3eZmZd3mZl/95l4d3d3iId3h3d3d5mZf/eZl4eIiIiId3d3d3eZmX/3mZmHeJmHeHeHd3d3mZl/95mZmHiId4h3mZmXd5mZf/eZmZeHh3iZd3d3d3eZmX/3mZmZh3eJl3d3d3d3mZl/+HmZmXh4mZmHd3d3d5mXj/95mZmYh5mZmZmZmZmZl///h5mZmZmZmZmZmZmZmXj///d5mZmZmZmZmZmZmZd/////h3d3d3d3d3d3d3d4//////+IiIiIiIiIiIiI////
 // @grant        none
 // ==/UserScript==
+
+const LoadingFailTimer = 1000;
 
 const ArrowList = [
     "127.0.0",
@@ -30,7 +32,6 @@ const Flpage = "blur(7px) grayscale(100%)";
 const CodeListC0 = [
     ];
 //TODO: 難読化する
-// wdとpdのコード数は一致させる必要がある。
 const CodeListC1 = [
     ];
 // ここまで
@@ -54,9 +55,23 @@ const NotCheckDomainList =
           "www.", ".com", ".net", ".edu", ".org", ".gov", ".top", ".arpa", ".mil", ".go", ".co", ".jp", ".tv" ,".lg", ".kr", ".ed", ".cn", ".to"
       ];
 
+let Mode = 0;
+
 (function() {
     'use strict';
     // Your code here...
+
+    if(!localStorage.getItem("Mode"))
+    {
+      localStorage.setItem("Mode", 0);
+      console.log("make(Mode=" + Mode + ")");
+    }
+    else
+    {
+      Mode = localStorage.getItem("Mode");
+      console.log("load(Mode=" + Mode + ")");
+    }
+
     // 読込完了待
     document.addEventListener('readystatechange', function()
     {
@@ -93,7 +108,7 @@ const NotCheckDomainList =
     });
     if(arrow) console.log("in arrow list");
 
-    let processFunc = arrow ? processElement2 : processElement;
+    let processFunc = (arrow || Mode == 1) ? processElement2 : processElement;
     // Observer
     const observer = new MutationObserver((records, observer) =>
     {
@@ -139,8 +154,9 @@ const NotCheckDomainList =
                           {
                               processFunc(element, splittedDomain);
                           });
+                          makeModeStatusPanel();
                           observer.observe(document, {attributes:true, childList: true, subtree: true, characterData: true});
-                       }, 2000);
+                       }, LoadingFailTimer);
 
     // 動的に追加された箇所も処理
     observer.observe(document, {attributes:true, childList: true, subtree: true, characterData: true});
@@ -155,6 +171,61 @@ const NotCheckDomainList =
 
     document.title = document.title + "(Z for Temp)";
 })();
+
+function makeModeStatusPanel()
+{
+  const panelDiv = document.createElement('div');
+  const statusP = document.createElement('p');
+  const disableZModeArrowButton = document.createElement('button');
+
+  statusP.style.margin = "auto";
+  let buttonText = "";
+  let colorText = "";
+
+  panelDiv.style.border = "solid";
+  panelDiv.style.margin = "-2px";
+  panelDiv.style.zIndex = "9999";
+  panelDiv.style.display = "flex";
+  panelDiv.style.width = "35%";
+  panelDiv.style.height = "3%";
+  panelDiv.style.borderRadius = "10px";
+  panelDiv.style.position = "fixed";
+  panelDiv.style.top = "1%";
+  panelDiv.style.left = "50%";
+
+  if(Mode == 1)
+  {
+    colorText = "#FF808040";
+    buttonText ="[C0 Only]\n C1処理が無効になっています";
+    panelDiv.style.borderColor = "#FF000080";
+  }
+  else
+  {
+    colorText = "#80FF8040";
+    buttonText = "[C0+C1]\n C1処理有効";
+  }
+  statusP.textContent = buttonText;
+
+  disableZModeArrowButton.style.width = "40%";
+  disableZModeArrowButton.style.height = "auto";
+  disableZModeArrowButton.textContent = Mode == 1 ? "C0+C1" : "C0";
+  disableZModeArrowButton.addEventListener('click', () =>
+  {
+    let dialogText = Mode == 1 ? "C0,C1処理実行に切り替えます。" : "DEBUG:C0処理のみに切り替えます";
+    if(!confirm(dialogText)) return;
+    Mode = Mode == 0 ? 1 : 0;
+    localStorage.setItem("Mode", Mode);
+    console.log("save(Mode=" + Mode + ")");
+    location.reload();
+  });
+
+  panelDiv.style.background = colorText;
+  panelDiv.appendChild(statusP);
+  panelDiv.appendChild(disableZModeArrowButton);
+
+  let body = document.getElementsByTagName('body');
+  body[0].prepend(panelDiv);
+}
 
 // 分割メイン処理
 function processElement(targetelement, splittedCurrentDomain)
@@ -241,6 +312,7 @@ function processElement(targetelement, splittedCurrentDomain)
   // 画像要素の場合
   else if(targetelement.tagName === 'IMG')
   {
+
     if(!targetelement.src)
     {
       console.log("removed unknown domain IMG");
@@ -266,7 +338,7 @@ function processElement(targetelement, splittedCurrentDomain)
   // 動画要素の場合
   else if(targetelement.tagName === 'VIDEO')
   {
-    // いったん何もしない(ここまで処理すると発覚の恐れあり)
+    targetelement.style.filter = Fl;
   }
   // その他の要素の場合
   else if (targetelement.src)
@@ -307,13 +379,9 @@ function processElement2(targetelement, splittedCurrentDomain)
       {
           text = true;
       }
-      else
-      {
-          childNode.textContent = processTextC1(childNode.textContent);
-      }
     }
 
-    if(img || href || title || text || checkWd(childNode))
+    if(img || href || title || text)
     {
         console.log("removed element(Processed 1):"+ childNode);
         removeDiv(childNode);
@@ -339,13 +407,9 @@ function processElement2(targetelement, splittedCurrentDomain)
     {
         text = true;
     }
-    else
-    {
-        targetelement.textContent = processTextC1(targetelement.textContent);
-    }
   }
 
-  if(img || href || title || text || checkWd(targetelement))
+  if(img || href || title || text)
   {
       console.log("removed parent element(Processed 1):"+ targetelement);
       removeDiv(targetelement);
