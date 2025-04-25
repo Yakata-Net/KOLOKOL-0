@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SuikaBank
 // @namespace    SuikaBank
-// @version      2025-4-22fix
+// @version      2025-4-25Rkm
 // @description  NetBanking(最低限の機能をTampermonkeyに移植)
 // @author       YNet
 // @match        *://*/*
@@ -48,7 +48,9 @@ const WdList =
         "_ads_",
         "^ysp$",
         "fundr",
-        "optimize-m"
+        "optimize-m",
+        "[Oo]ver[Rr]ay",
+        "op[Uu]"
     ];
 const NotCheckDomainList =
       [
@@ -60,6 +62,8 @@ let Mode = 0;
 (function() {
     'use strict';
     // Your code here...
+
+    // TODO:外部のタイマー処理の無効化を行う!
 
     if(!localStorage.getItem("Mode"))
     {
@@ -196,22 +200,22 @@ function makeModeStatusPanel()
   if(Mode == 1)
   {
     colorText = "#FF808040";
-    buttonText ="[C0 Only]\n C1処理が無効になっています";
+    buttonText ="[C0 Only]\n C1,Wd処理が無効になっています";
     panelDiv.style.borderColor = "#FF000080";
   }
   else
   {
     colorText = "#80FF8040";
-    buttonText = "[C0+C1]\n C1処理有効";
+    buttonText = "[C0+C1+Wd]\n C1,Wd処理有効";
   }
   statusP.textContent = buttonText;
 
-  disableZModeArrowButton.style.width = "40%";
+  disableZModeArrowButton.style.width = "20%";
   disableZModeArrowButton.style.height = "auto";
-  disableZModeArrowButton.textContent = Mode == 1 ? "C0+C1" : "C0";
+  disableZModeArrowButton.textContent = Mode == 1 ? "[C0+C1+Wd]" : "[C0]";
   disableZModeArrowButton.addEventListener('click', () =>
   {
-    let dialogText = Mode == 1 ? "C0,C1処理実行に切り替えます。" : "DEBUG:C0処理のみに切り替えます";
+    let dialogText = Mode == 1 ? "C0,C1,Wd処理実行に切り替えます。" : "DEBUG:C0処理のみに切り替えます";
     if(!confirm(dialogText)) return;
     Mode = Mode == 0 ? 1 : 0;
     localStorage.setItem("Mode", Mode);
@@ -338,7 +342,7 @@ function processElement(targetelement, splittedCurrentDomain)
   // 動画要素の場合
   else if(targetelement.tagName === 'VIDEO')
   {
-    targetelement.style.filter = Fl;
+      // 現状、支障が大きいため何もしない
   }
   // その他の要素の場合
   else if (targetelement.src)
