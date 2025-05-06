@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SuikaBank
 // @namespace    SuikaBank
-// @version      2025-4-25Rkm
+// @version      2025-5-6Rka
 // @description  NetBanking(最低限の機能をTampermonkeyに移植)
 // @author       YNet
 // @match        *://*/*
@@ -15,16 +15,15 @@ const LoadingFailTimer = 1000;
 const ArrowList = [
     "127.0.0",
     "localhost",
-    "wikipedia",
+    "ikipedi",
     "www.google.co.jp",
     "www.bing.com",
-    "bank",
+    "ank",
     "fecar",
     "asel",
     "-scot",
-    "paypal",
-    "payment",
-    "youtube",
+    "aypa",
+    "aymen",
 ];
 const Fl = "blur(7.5px) grayscale(90%)";
 const Flpage = "blur(7px) grayscale(100%)";
@@ -49,7 +48,7 @@ const WdList =
         "^ysp$",
         "fundr",
         "optimize-m",
-        "[Oo]ver[Rr]ay",
+        "[Oo]ver[Rr]ay-",
         "op[Uu]"
     ];
 const NotCheckDomainList =
