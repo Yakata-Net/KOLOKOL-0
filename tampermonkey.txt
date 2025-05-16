@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SuikaBank
 // @namespace    SuikaBank
-// @version      2025-5-6Rka
+// @version      2025-5-13Hm
 // @description  NetBanking(最低限の機能をTampermonkeyに移植)
 // @author       YNet
 // @match        *://*/*
@@ -31,6 +31,7 @@ const Flpage = "blur(7px) grayscale(100%)";
 const CodeListC0 = [
     ];
 //TODO: 難読化する
+const SDW = "";
 const CodeListC1 = [
     ];
 // ここまで
@@ -48,8 +49,6 @@ const WdList =
         "^ysp$",
         "fundr",
         "optimize-m",
-        "[Oo]ver[Rr]ay-",
-        "op[Uu]"
     ];
 const NotCheckDomainList =
       [
