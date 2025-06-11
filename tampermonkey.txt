@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SuikaBank
 // @namespace    SuikaBank
-// @version      2025-5-13Hm
+// @version      2025-6-13-sakura
 // @description  NetBanking(最低限の機能をTampermonkeyに移植)
 // @author       YNet
 // @match        *://*/*
@@ -27,12 +27,14 @@ const ArrowList = [
 ];
 const Fl = "blur(7.5px) grayscale(90%)";
 const Flpage = "blur(7px) grayscale(100%)";
-// チェック回避のため、各自で手入力すること
+
+// セキュリティソフトのチェック回避のため、リリース時は空、CICDや外部操作で書き換え
+// Level 0 CheckList
 const CodeListC0 = [
     ];
 //TODO: 難読化する
-const SDW = "";
 const CodeListC1 = [
+ 
     ];
 // ここまで
 const WdList =
@@ -516,16 +518,38 @@ function processTextC0(text)
 // COとは微妙に処理を変えている
 function processTextC1(text)
 {
-  // C0同様に将来的には、リモートで書き換え・任意コード実行ができるようにする
+  let tempstr = text;
   for(let i = 0; i < CodeListC1.length; i++)
   {
-    let c_Code = new RegExp(CodeListC1[i].wd, 'g');
-    let strlength = 1;
-    let pd = CodeListC1[i].pd.repeat(strlength);
-    text = text.replaceAll(c_Code, pd);
+    let c_Code = new RegExp(transfer96(CodeListC1[i].wd), 'g');
+    tempstr = tempstr.replace(c_Code, CodeListC1[i].pd);
   }
 
-  return text;
+  return tempstr;
+}
+
+function transfer96(text)
+{
+  let tempstr = "";
+  for(let i = 0; i < text.length; i++)
+  {
+      let cp = text.codePointAt(i);
+      if(cp >= 0x3041 && cp <= 0x309A)
+      {
+          tempstr += String.fromCodePoint(cp + 96);
+      }
+      else if(cp == 0x309C)
+      {
+          // コードの並び順の都合で何もしない
+          tempstr += "ー";
+      }
+      else
+      {
+          tempstr += String.fromCodePoint(cp);
+      }
+  }
+
+  return tempstr;
 }
 
 // 画像処理
