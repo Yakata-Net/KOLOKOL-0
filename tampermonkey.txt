@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SuikaBank
 // @namespace    SuikaBank
-// @version      2025-6-13-sakura
+// @version      2025-6-14-sakura
 // @description  NetBanking(最低限の機能をTampermonkeyに移植)
 // @author       YNet
 // @match        *://*/*
@@ -33,8 +33,8 @@ const Flpage = "blur(7px) grayscale(100%)";
 const CodeListC0 = [
     ];
 //TODO: 難読化する
-const CodeListC1 = [
- 
+// Level 1 WordList
+let CodeListC1 = [
     ];
 // ここまで
 const WdList =
@@ -64,6 +64,10 @@ let Mode = 0;
     // Your code here...
 
     // TODO:外部のタイマー処理の無効化を行う!
+    CodeListC1.forEach(codeC1 =>
+    {
+        codeC1.wd = transfer96(codeC1.wd);
+    });
 
     if(!localStorage.getItem("Mode"))
     {
@@ -158,7 +162,7 @@ let Mode = 0;
                           {
                               processFunc(element, splittedDomain);
                           });
-                          makeModeStatusPanel();
+
                           observer.observe(document, {attributes:true, childList: true, subtree: true, characterData: true});
                        }, LoadingFailTimer);
 
@@ -172,6 +176,7 @@ let Mode = 0;
     {
         processFunc(element, splittedDomain);
     });
+    makeModeStatusPanel();
 
     document.title = document.title + "(Z for Temp)";
 })();
@@ -518,11 +523,27 @@ function processTextC0(text)
 // COとは微妙に処理を変えている
 function processTextC1(text)
 {
+  if(text.includes(String.fromCodePoint(0x200B)))
+  {
+      console.log("return");
+      return text;
+  }
   let tempstr = text;
+
+  let rep = false;
   for(let i = 0; i < CodeListC1.length; i++)
   {
-    let c_Code = new RegExp(transfer96(CodeListC1[i].wd), 'g');
-    tempstr = tempstr.replace(c_Code, CodeListC1[i].pd);
+    let after = tempstr.split(CodeListC1[i].wd).join(CodeListC1[i].pd);
+    if(after != tempstr)
+    {
+        tempstr = after;
+        rep = true;
+    }
+  }
+
+  if(rep)
+  {
+      tempstr += String.fromCodePoint(0x200B);
   }
 
   return tempstr;
