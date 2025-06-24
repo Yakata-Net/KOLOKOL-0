@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SuikaBank
 // @namespace    SuikaBank
-// @version      2025-6-14-sakura
+// @version      2025-6-24-AAjisai
 // @description  NetBanking(最低限の機能をTampermonkeyに移植)
 // @author       YNet
 // @match        *://*/*
@@ -162,6 +162,7 @@ let Mode = 0;
                           {
                               processFunc(element, splittedDomain);
                           });
+                          makeModeStatusPanel();
 
                           observer.observe(document, {attributes:true, childList: true, subtree: true, characterData: true});
                        }, LoadingFailTimer);
@@ -176,7 +177,6 @@ let Mode = 0;
     {
         processFunc(element, splittedDomain);
     });
-    makeModeStatusPanel();
 
     document.title = document.title + "(Z for Temp)";
 })();
@@ -185,7 +185,6 @@ function makeModeStatusPanel()
 {
   const panelDiv = document.createElement('div');
   const statusP = document.createElement('p');
-  const disableZModeArrowButton = document.createElement('button');
 
   statusP.style.margin = "auto";
   let buttonText = "";
@@ -195,30 +194,27 @@ function makeModeStatusPanel()
   panelDiv.style.margin = "-2px";
   panelDiv.style.zIndex = "9999";
   panelDiv.style.display = "flex";
-  panelDiv.style.width = "35%";
-  panelDiv.style.height = "3%";
-  panelDiv.style.borderRadius = "10px";
+  panelDiv.style.width = "auto";
+  panelDiv.style.height = "20px";
+  panelDiv.style.borderRadius = "5px";
   panelDiv.style.position = "fixed";
-  panelDiv.style.top = "1%";
-  panelDiv.style.left = "50%";
+  panelDiv.style.top = "25%";
+  panelDiv.style.left = "90%";
 
   if(Mode == 1)
   {
     colorText = "#FF808040";
-    buttonText ="[C0 Only]\n C1,Wd処理が無効になっています";
+    buttonText ="[C0 Only]";
     panelDiv.style.borderColor = "#FF000080";
   }
   else
   {
     colorText = "#80FF8040";
-    buttonText = "[C0+C1+Wd]\n C1,Wd処理有効";
+    buttonText = "[C0+C1+Wd]";
   }
   statusP.textContent = buttonText;
 
-  disableZModeArrowButton.style.width = "20%";
-  disableZModeArrowButton.style.height = "auto";
-  disableZModeArrowButton.textContent = Mode == 1 ? "[C0+C1+Wd]" : "[C0]";
-  disableZModeArrowButton.addEventListener('click', () =>
+  panelDiv.addEventListener('click', () =>
   {
     let dialogText = Mode == 1 ? "C0,C1,Wd処理実行に切り替えます。" : "DEBUG:C0処理のみに切り替えます";
     if(!confirm(dialogText)) return;
@@ -230,7 +226,6 @@ function makeModeStatusPanel()
 
   panelDiv.style.background = colorText;
   panelDiv.appendChild(statusP);
-  panelDiv.appendChild(disableZModeArrowButton);
 
   let body = document.getElementsByTagName('body');
   body[0].prepend(panelDiv);
@@ -497,7 +492,7 @@ function checkWd(element)
 // 親要素の削除
 function removeDiv(element)
 {
-  element.remove();
+  element.innerHTML = '';
 }
 
 // 処理関数
