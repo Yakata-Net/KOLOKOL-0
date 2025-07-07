@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SuikaBank
 // @namespace    SuikaBank
-// @version      2025-6-24-AAjisai
+// @version      2025-7-9-tachiki
 // @description  NetBanking(最低限の機能をTampermonkeyに移植)
 // @author       YNet
 // @match        *://*/*
@@ -528,7 +528,8 @@ function processTextC1(text)
   let rep = false;
   for(let i = 0; i < CodeListC1.length; i++)
   {
-    let after = tempstr.split(CodeListC1[i].wd).join(CodeListC1[i].pd);
+    let c_Code = new RegExp(CodeListC1[i].wd + "(?=[^\u30A1-\u30FF]|[、。!！.,]|$)", 'g');
+    let after = tempstr.replace(c_Code, CodeListC1[i].pd);
     if(after != tempstr)
     {
         tempstr = after;
