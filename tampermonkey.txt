@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SuikaBank
 // @namespace    SuikaBank
-// @version      2025-7-9-tachiki
+// @version      2025-7-14-kikyou
 // @description  NetBanking(最低限の機能をTampermonkeyに移植)
 // @author       YNet
 // @match        *://*/*
@@ -493,6 +493,18 @@ function checkWd(element)
 function removeDiv(element)
 {
   element.innerHTML = '';
+  if(element?.parentElement)
+  {
+      for (const child of element?.parentElement.children)
+      {
+          if(child.tagName !== 'A' && child.tagName !== 'HREF')
+          {
+              continue;
+          }
+          element?.parentElement.removeChild(child);
+          console.log("brother removed!!" + child.tagName);
+      }
+  }
 }
 
 // 処理関数
