@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SuikaBank
 // @namespace    SuikaBank
-// @version      2025-9-03-hoiku
+// @version      2025-12-19-su
 // @description  NetBanking(最低限の機能をTampermonkeyに移植)
 // @author       YNet
 // @match        *://*/*
@@ -10,7 +10,9 @@
 // @grant        none
 // ==/UserScript==
 
-const LoadingFailTimer = 1000;
+const LoadTimerValue = 500;
+const IntervalTimerValue = 10000;
+const DebugLogOutput = false;
 
 const ArrowList = [
     "127.0.0",
@@ -72,21 +74,21 @@ let Mode = 0;
     if(!localStorage.getItem("Mode"))
     {
       localStorage.setItem("Mode", 0);
-      console.log("make(Mode=" + Mode + ")");
+      DebugLogging("make(Mode=" + Mode + ")");
     }
     else
     {
       Mode = localStorage.getItem("Mode");
-      console.log("load(Mode=" + Mode + ")");
+      DebugLogging("load(Mode=" + Mode + ")");
     }
 
     // 読込完了待
     document.addEventListener('readystatechange', function()
     {
-        console.log(document.readyState);
+        DebugLogging(document.readyState);
         if(document.readyState === 'interactive' || document.readyState === 'complete')
         {
-            console.log("TREE LOAD COMPLETE");
+            DebugLogging("TREE LOAD COMPLETE");
             if(document.body.style)
             {
                 document.body.style.filter = "none";
@@ -114,10 +116,26 @@ let Mode = 0;
     {
         window.location.hostname.includes(arrowstr);
     });
-    if(arrow) console.log("in arrow list");
+    if(arrow) DebugLogging("in arrow list");
 
     let processFunc = (arrow || Mode == 1) ? processElement2 : processElement;
-    // Observer
+
+    // 検知逃れ防止のため、定期的にも後チェック
+    window.setTimeout(() => {DebugLogging("ロード後最初に実行"); postCheckMain(processFunc, splittedDomain)}, LoadTimerValue);
+    window.setInterval(() => {DebugLogging("定期実行");postCheckMain(processFunc, splittedDomain)}, IntervalTimerValue);
+
+    // 検知逃れ防止②ページ遷移時チェック
+    document.addEventListener('pageshow', () =>
+    {
+        DebugLogging("ページ遷移チェック");
+        const elements = document.querySelectorAll('*');
+        elements.forEach(element =>
+        {
+            processFunc(element, splittedDomain)
+        });
+    });
+
+    // 検知逃れ防止③ページ動的変更時チェック
     const observer = new MutationObserver((records, observer) =>
     {
         observer.disconnect();
@@ -146,26 +164,21 @@ let Mode = 0;
         observer.observe(document, {attributes:true, childList: true, subtree: true, characterData: true});
     });
 
-    // 完了が返ってこなかった場合のフェール
-    window.setTimeout(() =>
-                      {
-                          observer.disconnect();
-                          console.log("LOAD FAIL TIMEOUT start double check");
-                          if(document.body.style)
-                          {
-                              document.body.style.filter = "none";
-                              document.body.style.display = "block";
-                          }
-                          // 検知逃れ防止のためもう一度後チェック
-                          const elements = document.querySelectorAll('*');
-                          elements.forEach(element =>
-                          {
-                              processFunc(element, splittedDomain);
-                          });
-                          makeModeStatusPanel();
+    // 検知逃れ防止④スクロール時チェック
+    const intersectObserver = new IntersectionObserver((entries) =>
+    {
+        entries.forEach(entry =>
+        {
+            if(entry.isIntersecting)
+            {
+                DebugLogging("INTERASECT:" + entry.target.id);
+                processFunc(entry.target, splittedDomain);
+            }
+        });
+    });
 
-                          observer.observe(document, {attributes:true, childList: true, subtree: true, characterData: true});
-                       }, LoadingFailTimer);
+
+    makeModeStatusPanel();
 
     // 動的に追加された箇所も処理
     observer.observe(document, {attributes:true, childList: true, subtree: true, characterData: true});
@@ -175,11 +188,27 @@ let Mode = 0;
     const elements = document.querySelectorAll('*');
     elements.forEach(element =>
     {
+        intersectObserver.observe(element);
         processFunc(element, splittedDomain);
     });
 
     document.title = document.title + "(Z for Temp)";
 })();
+
+function postCheckMain(processFunc, splittedDomain)
+{
+    if(document.body.style)
+    {
+        document.body.style.filter = "none";
+        document.body.style.display = "block";
+    }
+
+    const elements = document.querySelectorAll('*');
+    elements.forEach(element =>
+    {
+        processFunc(element, splittedDomain)
+    });
+}
 
 function makeModeStatusPanel()
 {
@@ -220,7 +249,7 @@ function makeModeStatusPanel()
     if(!confirm(dialogText)) return;
     Mode = Mode == 0 ? 1 : 0;
     localStorage.setItem("Mode", Mode);
-    console.log("save(Mode=" + Mode + ")");
+    DebugLogging("save(Mode=" + Mode + ")");
     location.reload();
   });
 
@@ -259,7 +288,7 @@ function processElement(targetelement, splittedCurrentDomain)
 
     if(img || href || title || text || checkWd(childNode))
     {
-        console.log("removed element(Processed 1):"+ childNode);
+        DebugLogging("removed element(Processed 1):"+ childNode);
         removeDiv(childNode);
     }
   });
@@ -286,7 +315,7 @@ function processElement(targetelement, splittedCurrentDomain)
 
   if(img || href || title || text || checkWd(targetelement))
   {
-      console.log("removed parent element(Processed 1):"+ targetelement);
+      DebugLogging("removed parent element(Processed 1):"+ targetelement);
       removeDiv(targetelement);
       return;
   }
@@ -296,19 +325,19 @@ function processElement(targetelement, splittedCurrentDomain)
   {
     if(!targetelement.src)
     {
-      console.log("removed unknown domain IFRAME");
+      DebugLogging("removed unknown domain IFRAME");
       removeDiv(targetelement);
     }
     else if(!URL?.canParse(targetelement.src))
     {
-      console.log("removed IFRAME, CANNOT PARSE URL:" + targetelement.src);
+      DebugLogging("removed IFRAME, CANNOT PARSE URL:" + targetelement.src);
     }
     else
     {
       const iframeDomain = new URL(targetelement.src).hostname;
       if (checkDomain(iframeDomain, splittedCurrentDomain))
       {
-        console.log("removed IFRAME(Processed 2):"+ iframeDomain);
+        DebugLogging("removed IFRAME(Processed 2):"+ iframeDomain);
         removeDiv(targetelement);
       }
     }
@@ -319,13 +348,13 @@ function processElement(targetelement, splittedCurrentDomain)
 
     if(!targetelement.src)
     {
-      console.log("removed unknown domain IMG");
+      DebugLogging("removed unknown domain IMG");
       targetelement.style.filter = Fl;
       //removeDiv(targetelement);
     }
     else if(!URL?.canParse(targetelement.src))
     {
-      console.log("removed IMG, CANNOT PARSE URL:" + targetelement.src);
+      DebugLogging("removed IMG, CANNOT PARSE URL:" + targetelement.src);
       //removeDiv(targetelement);
     }
     else
@@ -333,7 +362,7 @@ function processElement(targetelement, splittedCurrentDomain)
       const iframeDomain = new URL(targetelement.src).hostname;
       if (checkDomain(iframeDomain, splittedCurrentDomain))
       {
-        console.log("removed IMG(Processed 2):"+ iframeDomain);
+        DebugLogging("removed IMG(Processed 2):"+ iframeDomain);
         targetelement.style.filter = Fl;
         //removeDiv(targetelement);
       }
@@ -349,7 +378,7 @@ function processElement(targetelement, splittedCurrentDomain)
   {
     if(!URL?.canParse(targetelement.src))
     {
-      console.log("removed(Processed 2) " + targetelement.tagName + ", CANNOT PARSE URL:"+ targetelement.src);
+      DebugLogging("removed(Processed 2) " + targetelement.tagName + ", CANNOT PARSE URL:"+ targetelement.src);
       removeDiv(targetelement);
     }
     else
@@ -357,7 +386,7 @@ function processElement(targetelement, splittedCurrentDomain)
       const elementDomain = new URL(targetelement.src).hostname;
       if (checkDomain(elementDomain, splittedCurrentDomain))
       {
-        console.log("removed OTHER(Processed 2):"+ elementDomain);
+        DebugLogging("removed OTHER(Processed 2):"+ elementDomain);
         removeDiv(targetelement);
       }
     }
@@ -387,7 +416,7 @@ function processElement2(targetelement, splittedCurrentDomain)
 
     if(img || href || title || text)
     {
-        console.log("removed element(Processed 1):"+ childNode);
+        DebugLogging("removed element(Processed 1):"+ childNode);
         removeDiv(childNode);
     }
 
@@ -415,7 +444,7 @@ function processElement2(targetelement, splittedCurrentDomain)
 
   if(img || href || title || text)
   {
-      console.log("removed parent element(Processed 1):"+ targetelement);
+      DebugLogging("removed parent element(Processed 1):"+ targetelement);
       removeDiv(targetelement);
       return;
   }
@@ -424,8 +453,8 @@ function processElement2(targetelement, splittedCurrentDomain)
 // 分割合致
 function checkDomain(elementDomain, splittedCurrentDomain)
 {
-  //console.log(splittedCurrentDomain);
-  //console.log(elementDomain);
+  //DebugLogging(splittedCurrentDomain);
+  //DebugLogging(elementDomain);
   return splittedCurrentDomain.every(spl =>
   {
     !elementDomain.includes(spl)
@@ -446,7 +475,7 @@ function checkWd(element)
                let c_Code = new RegExp(wd, 'g');
                if(c_Code.test(cls))
                {
-                   console.log("checkWd(class):resultcnt++"+ cls);
+                   DebugLogging("checkWd(class):resultcnt++"+ cls);
                    resultCnt++;
                    return;
                }
@@ -467,7 +496,7 @@ function checkWd(element)
     }
     if(idCmp)
     {
-        console.log("checkWd(id):resultcnt++"+ element?.id);
+        DebugLogging("checkWd(id):resultcnt++"+ element?.id);
         return true;
     }
 
@@ -482,7 +511,7 @@ function checkWd(element)
     }
     if(textCmp)
     {
-        console.log("checkWd(text):resultcnt++"+ element?.textContent);
+        DebugLogging("checkWd(text):resultcnt++"+ element?.textContent);
         return true;
     }
 
@@ -502,7 +531,7 @@ function removeDiv(element)
               continue;
           }
           element?.parentElement.removeChild(child);
-          console.log("brother removed!!" + child.tagName);
+          DebugLogging("brother removed!!" + child.tagName);
       }
   }
 }
@@ -532,7 +561,7 @@ function processTextC1(text)
 {
   if(text.includes(String.fromCodePoint(0x200B)))
   {
-      console.log("return");
+      DebugLogging("return");
       return text;
   }
   let tempstr = text;
@@ -604,7 +633,7 @@ function hrefProcess(childNode)
 
   let beforeHref = "";
   try { beforeHref = decodeURI(childNode.href); }
-  catch(e) { console.log("URL Decode ERROR:" + childNode.href); }
+  catch(e) { DebugLogging("URL Decode ERROR:" + childNode.href); }
 
   for(let i = 0; i < CodeListC0.length; i++)
   {
@@ -632,4 +661,14 @@ function titleProcess(childNode)
       return true;
     }
   }
+}
+
+// LOG
+function DebugLogging(message)
+{
+    if(DebugLogOutput)
+    {
+        console.log(message);
+    }
+
 }
