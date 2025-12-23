@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SuikaBank
 // @namespace    SuikaBank
-// @version      2025-12-19-su
+// @version      2025-12-23-ChoSi
 // @description  NetBanking(最低限の機能をTampermonkeyに移植)
 // @author       YNet
 // @match        *://*/*
@@ -10,17 +10,16 @@
 // @grant        none
 // ==/UserScript==
 
-const LoadTimerValue = 500;
-const IntervalTimerValue = 10000;
+// 各タイマ値は互いに共通公約数を持たないようにし、周期が集中するのを回避
+const IntercectDelay = 477;
+const PathChangeDetect = 500;
+const LoadTimerValue = 391;
+const IntervalTimerValue = 20034;
 const DebugLogOutput = false;
 
 const ArrowList = [
     "127.0.0",
     "localhost",
-    "ikipedi",
-    "www.google.co.jp",
-    "www.bing.com",
-    "ank",
     "fecar",
     "asel",
     "-scot",
@@ -60,6 +59,7 @@ const NotCheckDomainList =
       ];
 
 let Mode = 0;
+let CurrentPathName = "";
 
 (function() {
     'use strict';
@@ -82,29 +82,11 @@ let Mode = 0;
       DebugLogging("load(Mode=" + Mode + ")");
     }
 
-    // 読込完了待
-    document.addEventListener('readystatechange', function()
-    {
-        DebugLogging(document.readyState);
-        if(document.readyState === 'interactive' || document.readyState === 'complete')
-        {
-            DebugLogging("TREE LOAD COMPLETE");
-            if(document.body.style)
-            {
-                document.body.style.filter = "none";
-                document.body.style.display = "block";
-            }
-        }
-        else
-        {
-            if(document.body.style)
-            {
-                document.body.style.filter = Flpage;
-            }
-        }
-    });
+
 
     let CurrentDomain = window.location.hostname;
+    CurrentPathName = window.location.pathname;
+    DebugLogging(CurrentPathName);
     NotCheckDomainList.forEach(ncd =>
     {
         CurrentDomain = CurrentDomain.replace(ncd, "");
@@ -125,15 +107,16 @@ let Mode = 0;
     window.setInterval(() => {DebugLogging("定期実行");postCheckMain(processFunc, splittedDomain)}, IntervalTimerValue);
 
     // 検知逃れ防止②ページ遷移時チェック
-    document.addEventListener('pageshow', () =>
+    window.setInterval(() =>
     {
-        DebugLogging("ページ遷移チェック");
-        const elements = document.querySelectorAll('*');
-        elements.forEach(element =>
+        if(window.location.pathname != CurrentPathName)
         {
-            processFunc(element, splittedDomain)
-        });
-    });
+            DebugLogging("now:" + window.location.pathname + ", prev=" + CurrentPathName);
+            postCheckMain(processFunc, splittedDomain);
+            CurrentPathName = window.location.pathname;
+        }
+
+    }, PathChangeDetect);
 
     // 検知逃れ防止③ページ動的変更時チェック
     const observer = new MutationObserver((records, observer) =>
@@ -175,7 +158,7 @@ let Mode = 0;
                 processFunc(entry.target, splittedDomain);
             }
         });
-    });
+    }, {delay:IntercectDelay});
 
 
     makeModeStatusPanel();
@@ -185,7 +168,7 @@ let Mode = 0;
 
     // 最初に表示された部分の処理
     // すべての要素を取得、処理実施
-    const elements = document.querySelectorAll('*');
+    let elements = document.querySelectorAll('*');
     elements.forEach(element =>
     {
         intersectObserver.observe(element);
@@ -197,17 +180,15 @@ let Mode = 0;
 
 function postCheckMain(processFunc, splittedDomain)
 {
-    if(document.body.style)
-    {
-        document.body.style.filter = "none";
-        document.body.style.display = "block";
-    }
+    document.body.style.filter = "blur(15px)";
 
-    const elements = document.querySelectorAll('*');
+    let elements = document.querySelectorAll('*');
+    DebugLogging(elements);
     elements.forEach(element =>
     {
         processFunc(element, splittedDomain)
     });
+    document.body.style.filter = "none";
 }
 
 function makeModeStatusPanel()
