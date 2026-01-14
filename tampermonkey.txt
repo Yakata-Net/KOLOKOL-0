@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SuikaBank
 // @namespace    SuikaBank
-// @version      2025-12-23-ChoSi
+// @version      2026-01-14-optimized
 // @description  NetBanking(最低限の機能をTampermonkeyに移植)
 // @author       YNet
 // @match        *://*/*
@@ -14,7 +14,6 @@
 const IntercectDelay = 477;
 const PathChangeDetect = 500;
 const LoadTimerValue = 391;
-const IntervalTimerValue = 20034;
 const DebugLogOutput = false;
 
 const ArrowList = [
@@ -35,7 +34,7 @@ const CodeListC0 = [
     ];
 //TODO: 難読化する
 // Level 1 WordList
-let CodeListC1 = [
+const CodeListC1 = [
     ];
 // ここまで
 const WdList =
@@ -58,8 +57,14 @@ const NotCheckDomainList =
           "www.", ".com", ".net", ".edu", ".org", ".gov", ".top", ".arpa", ".mil", ".go", ".co", ".jp", ".tv" ,".lg", ".kr", ".ed", ".cn", ".to"
       ];
 
+let CodeListC0RegExp;
+let CodeListC1RegExp;
+let WdListRegExp;
+
 let Mode = 0;
 let CurrentPathName = "";
+
+const processedElement = new WeakSet();
 
 (function() {
     'use strict';
@@ -71,6 +76,10 @@ let CurrentPathName = "";
         codeC1.wd = transfer96(codeC1.wd);
     });
 
+    CodeListC0RegExp = CodeListC0.map(elem => new RegExp(elem.wd, 'g'));
+    CodeListC1RegExp = CodeListC1.map(elem => new RegExp(elem.wd + "(?=[^\u30A1-\u30FF]|[、。!！.,]|$)", 'g'));
+    WdListRegExp = WdList.map(elem => new RegExp(elem.wd, 'g'));
+
     if(!localStorage.getItem("Mode"))
     {
       localStorage.setItem("Mode", 0);
@@ -81,8 +90,6 @@ let CurrentPathName = "";
       Mode = localStorage.getItem("Mode");
       DebugLogging("load(Mode=" + Mode + ")");
     }
-
-
 
     let CurrentDomain = window.location.hostname;
     CurrentPathName = window.location.pathname;
@@ -101,10 +108,6 @@ let CurrentPathName = "";
     if(arrow) DebugLogging("in arrow list");
 
     let processFunc = (arrow || Mode == 1) ? processElement2 : processElement;
-
-    // 検知逃れ防止のため、定期的にも後チェック
-    window.setTimeout(() => {DebugLogging("ロード後最初に実行"); postCheckMain(processFunc, splittedDomain)}, LoadTimerValue);
-    window.setInterval(() => {DebugLogging("定期実行");postCheckMain(processFunc, splittedDomain)}, IntervalTimerValue);
 
     // 検知逃れ防止②ページ遷移時チェック
     window.setInterval(() =>
@@ -248,6 +251,8 @@ function processElement(targetelement, splittedCurrentDomain)
   // 画像・テキスト処理
   targetelement.childNodes.forEach(childNode =>
   {
+    if(processedElement.has(childNode)){DebugLogging(childNode + "is processed"); ;return;}
+
     let img = imageProcess(childNode);
     let href = hrefProcess(childNode);
     let title = titleProcess(childNode);
@@ -267,12 +272,15 @@ function processElement(targetelement, splittedCurrentDomain)
       }
     }
 
-    if(img || href || title || text || checkWd(childNode))
+    if(img || href || title || text)
     {
-        DebugLogging("removed element(Processed 1):"+ childNode);
-        removeDiv(childNode);
+        DebugLogging("removed parent element(Processed 1):"+ targetelement);
+        processedElement.add(childNode);
+        return
     }
   });
+
+  if(processedElement.has(targetelement)){DebugLogging(targetelement + "is processed"); return;}
 
   // Parent
   let img = imageProcess(targetelement);
@@ -294,10 +302,11 @@ function processElement(targetelement, splittedCurrentDomain)
     }
   }
 
-  if(img || href || title || text || checkWd(targetelement))
+  if(img || href || title || text)
   {
       DebugLogging("removed parent element(Processed 1):"+ targetelement);
-      removeDiv(targetelement);
+      targetelement.src = '';
+      processedElement.add(targetelement);
       return;
   }
 
@@ -307,7 +316,8 @@ function processElement(targetelement, splittedCurrentDomain)
     if(!targetelement.src)
     {
       DebugLogging("removed unknown domain IFRAME");
-      removeDiv(targetelement);
+      targetelement.src = '';
+      processedElement.add(targetelement);
     }
     else if(!URL?.canParse(targetelement.src))
     {
@@ -319,7 +329,8 @@ function processElement(targetelement, splittedCurrentDomain)
       if (checkDomain(iframeDomain, splittedCurrentDomain))
       {
         DebugLogging("removed IFRAME(Processed 2):"+ iframeDomain);
-        removeDiv(targetelement);
+        targetelement.src = '';
+        processedElement.add(targetelement);
       }
     }
   }
@@ -331,12 +342,11 @@ function processElement(targetelement, splittedCurrentDomain)
     {
       DebugLogging("removed unknown domain IMG");
       targetelement.style.filter = Fl;
-      //removeDiv(targetelement);
+      processedElement.add(targetelement);
     }
     else if(!URL?.canParse(targetelement.src))
     {
       DebugLogging("removed IMG, CANNOT PARSE URL:" + targetelement.src);
-      //removeDiv(targetelement);
     }
     else
     {
@@ -345,7 +355,7 @@ function processElement(targetelement, splittedCurrentDomain)
       {
         DebugLogging("removed IMG(Processed 2):"+ iframeDomain);
         targetelement.style.filter = Fl;
-        //removeDiv(targetelement);
+        processedElement.add(targetelement);
       }
     }
   }
@@ -360,7 +370,8 @@ function processElement(targetelement, splittedCurrentDomain)
     if(!URL?.canParse(targetelement.src))
     {
       DebugLogging("removed(Processed 2) " + targetelement.tagName + ", CANNOT PARSE URL:"+ targetelement.src);
-      removeDiv(targetelement);
+      targetelement.src = '';
+      processedElement.add(targetelement);
     }
     else
     {
@@ -368,7 +379,8 @@ function processElement(targetelement, splittedCurrentDomain)
       if (checkDomain(elementDomain, splittedCurrentDomain))
       {
         DebugLogging("removed OTHER(Processed 2):"+ elementDomain);
-        removeDiv(targetelement);
+        targetelement.src = '';
+        processedElement.add(targetelement);
       }
     }
   }
@@ -380,6 +392,8 @@ function processElement2(targetelement, splittedCurrentDomain)
   // 画像・テキスト処理
   targetelement.childNodes.forEach(childNode =>
   {
+    if(processedElement.has(childNode)){DebugLogging(childNode + "is processed"); ;return;}
+
     let img = imageProcess(childNode);
     let href = hrefProcess(childNode);
     let title = titleProcess(childNode);
@@ -398,21 +412,19 @@ function processElement2(targetelement, splittedCurrentDomain)
     if(img || href || title || text)
     {
         DebugLogging("removed element(Processed 1):"+ childNode);
-        removeDiv(childNode);
-    }
-
-    if(checkWd(targetelement))
-    {
-        removeDiv(targetelement);
+        targetelement.src = '';
+        processedElement.add(childNode);
     }
   });
+
+  if(processedElement.has(targetelement)){DebugLogging(targetelement + "is processed"); return;}
 
   // Parent
   let img = imageProcess(targetelement);
   let href = hrefProcess(targetelement);
   let title = titleProcess(targetelement);
-
   let text = false;
+
   if(targetelement.nodeType == Node.TEXT_NODE)
   {
     let before = targetelement.textContent;
@@ -426,16 +438,13 @@ function processElement2(targetelement, splittedCurrentDomain)
   if(img || href || title || text)
   {
       DebugLogging("removed parent element(Processed 1):"+ targetelement);
-      removeDiv(targetelement);
-      return;
+      processedElement.add(targetelement);
   }
 }
 
 // 分割合致
 function checkDomain(elementDomain, splittedCurrentDomain)
 {
-  //DebugLogging(splittedCurrentDomain);
-  //DebugLogging(elementDomain);
   return splittedCurrentDomain.every(spl =>
   {
     !elementDomain.includes(spl)
@@ -448,18 +457,21 @@ function checkWd(element)
     let classCmp = false;
     if(element?.classList)
     {
-       classCmp = WdList.some(wd =>
+       classCmp = WdList.some((wd, index) =>
        {
            let resultCnt = 0;
            element.classList.forEach(cls =>
            {
-               let c_Code = new RegExp(wd, 'g');
+
+               let c_Code = WdListRegExp[index];
                if(c_Code.test(cls))
                {
                    DebugLogging("checkWd(class):resultcnt++"+ cls);
                    resultCnt++;
+                   c_Code.lastIndex = 0;
                    return;
                }
+               c_Code.lastIndex = 0;
            });
            return resultCnt > 0;
        });
@@ -469,10 +481,12 @@ function checkWd(element)
     let idCmp = false;
     if(element?.id)
     {
-        idCmp = WdList.some(wd =>
+        idCmp = WdList.some((wd, index) =>
         {
-            let c_Code = new RegExp(wd, 'g');
+
+            let c_Code = WdListRegExp[index];
             c_Code.test(element.id);
+            c_Code.lastIndex = 0;
         });
     }
     if(idCmp)
@@ -484,10 +498,11 @@ function checkWd(element)
     let textCmp = false;
     if(element?.textContent)
     {
-        textCmp = WdList.some(wd =>
+        textCmp = WdList.some((wd, index) =>
         {
-            let c_Code = new RegExp(wd, 'g');
+            let c_Code = WdListRegExp[index];
             c_Code.test(element.textContent)
+            c_Code.lastIndex = 0;
         });
     }
     if(textCmp)
@@ -499,24 +514,6 @@ function checkWd(element)
     return false;
 }
 
-// 親要素の削除
-function removeDiv(element)
-{
-  element.innerHTML = '';
-  if(element?.parentElement)
-  {
-      for (const child of element?.parentElement.children)
-      {
-          if(child.tagName !== 'A' && child.tagName !== 'HREF')
-          {
-              continue;
-          }
-          element?.parentElement.removeChild(child);
-          DebugLogging("brother removed!!" + child.tagName);
-      }
-  }
-}
-
 // 処理関数
 function processTextC0(text)
 {
@@ -526,12 +523,13 @@ function processTextC0(text)
   {
     let preProcessString = text;
 
-    let c_Code = new RegExp(CodeListC0[i].wd, 'g');
+    let c_Code = CodeListC0RegExp[i];
     text = text.replace(c_Code, CodeListC0[i].pd);
     if(preProcessString != text)
     {
       text = CodeListC0[i].pd;
     }
+    c_Code.lastIndex = 0;
   }
 
   return text;
@@ -550,13 +548,14 @@ function processTextC1(text)
   let rep = false;
   for(let i = 0; i < CodeListC1.length; i++)
   {
-    let c_Code = new RegExp(CodeListC1[i].wd + "(?=[^\u30A1-\u30FF]|[、。!！.,]|$)", 'g');
+    let c_Code = CodeListC1RegExp[i];
     let after = tempstr.replace(c_Code, CodeListC1[i].pd);
     if(after != tempstr)
     {
         tempstr = after;
         rep = true;
     }
+    c_Code.lastIndex = 0;
   }
 
   if(rep)
@@ -596,13 +595,15 @@ function imageProcess(childNode)
 {
   for(let i = 0; i < CodeListC0.length; i++)
   {
-    let c_Code = new RegExp(CodeListC0[i].wd, 'g');
+    let c_Code = CodeListC0RegExp[i];
     if(c_Code.test(childNode.alt))
     {
       childNode.src = "";
       childNode.style.filter = Flpage;
+      c_Code.lastIndex = 0;
       return true;
     }
+    c_Code.lastIndex = 0;
   }
   return false;
 }
@@ -618,29 +619,35 @@ function hrefProcess(childNode)
 
   for(let i = 0; i < CodeListC0.length; i++)
   {
-    let c_Code = new RegExp(CodeListC0[i].wd, 'g');
+    let c_Code = CodeListC0RegExp[i];
     if(c_Code.test(beforeHref))
     {
       let afterHref = CodeListC0[i].pd;
       childNode.href = encodeURI(afterHref);
+      c_Code.lastIndex = 0;
       return true;
     }
+    c_Code.lastIndex = 0;
   }
   return false;
 }
 // タイトル文処理
 function titleProcess(childNode)
 {
+  let result = false;
   if(childNode.title == null) return false;
 
   for(let i = 0; i < CodeListC0.length; i++)
   {
-    let c_Code = new RegExp(CodeListC0[i].wd, 'g');
+    let c_Code = CodeListC0RegExp[i];
+
     if(c_Code.test(childNode.title))
     {
       childNode.title = processTextC0(childNode.title);
+      c_Code.lastIndex = 0;
       return true;
     }
+    c_Code.lastIndex = 0;
   }
 }
 
