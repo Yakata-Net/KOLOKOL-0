@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SuikaBank
 // @namespace    SuikaBank
-// @version      2026-01-14-optimized
+// @version      2026-01-21-Fou
 // @description  NetBanking(最低限の機能をTampermonkeyに移植)
 // @author       YNet
 // @match        *://*/*
@@ -39,18 +39,21 @@ const CodeListC1 = [
 // ここまで
 const WdList =
     [
-        "^ob-",
         "^ad$",
         "^adsby",
-        "^ns-[0-9]{3,}",
-        "^GoogleActiveView",
-        "^logly",
-        "^ydn$",
+        "adservice",
+        "GoogleActiveView",
+        "logly",
         "^AD_",
-        "_ads_",
-        "^ysp$",
+        "^ads_",
+        "ysp$",
+        "yads$",
+        "i[0-9]st",
+        "ns-.{5}-e-",
+        "sc-.{6}",
         "fundr",
         "optimize-m",
+        "OUTBRAIN",
     ];
 const NotCheckDomainList =
       [
@@ -76,9 +79,9 @@ const processedElement = new WeakSet();
         codeC1.wd = transfer96(codeC1.wd);
     });
 
-    CodeListC0RegExp = CodeListC0.map(elem => new RegExp(elem.wd, 'g'));
-    CodeListC1RegExp = CodeListC1.map(elem => new RegExp(elem.wd + "(?=[^\u30A1-\u30FF]|[、。!！.,]|$)", 'g'));
-    WdListRegExp = WdList.map(elem => new RegExp(elem.wd, 'g'));
+    CodeListC0RegExp = CodeListC0.map(elem => new RegExp(elem.wd, 'gi'));
+    CodeListC1RegExp = CodeListC1.map(elem => new RegExp(elem.wd + "(?=[^\u30A1-\u30FF]|[、。!！.,]|$)", 'gi'));
+    WdListRegExp = WdList.map(elem => new RegExp(elem, 'gi'));
 
     if(!localStorage.getItem("Mode"))
     {
@@ -204,27 +207,26 @@ function makeModeStatusPanel()
   let colorText = "";
 
   panelDiv.style.border = "solid";
-  panelDiv.style.margin = "-2px";
+  panelDiv.style.margin = "2px";
   panelDiv.style.zIndex = "9999";
   panelDiv.style.display = "flex";
-  panelDiv.style.width = "auto";
-  panelDiv.style.height = "20px";
-  panelDiv.style.borderRadius = "5px";
-  panelDiv.style.position = "fixed";
-  panelDiv.style.top = "25%";
-  panelDiv.style.left = "90%";
+  panelDiv.style.width = "100%";
+  panelDiv.style.height = "auto";
+  panelDiv.style.borderRadius = "3px";
+  panelDiv.style.position = "auto";
 
   if(Mode == 1)
   {
-    colorText = "#FF808040";
+    colorText = "#FF8080A0";
     buttonText ="[C0 Only]";
-    panelDiv.style.borderColor = "#FF000080";
+    panelDiv.style.borderColor = "#FF0000A0";
   }
   else
   {
-    colorText = "#80FF8040";
+    colorText = "#80FF80A0";
     buttonText = "[C0+C1+Wd]";
   }
+  statusP.style.margin = "5px";
   statusP.textContent = buttonText;
 
   panelDiv.addEventListener('click', () =>
@@ -240,13 +242,60 @@ function makeModeStatusPanel()
   panelDiv.style.background = colorText;
   panelDiv.appendChild(statusP);
 
-  let body = document.getElementsByTagName('body');
-  body[0].prepend(panelDiv);
+  let head = document.getElementsByTagName('html');
+  head[0].prepend(panelDiv);
 }
 
 // 分割メイン処理
 function processElement(targetelement, splittedCurrentDomain)
 {
+  // 先にWdチェック
+  let wdFlg = false;
+  if(targetelement?.classList)
+  {
+
+      targetelement?.classList.forEach(cls =>
+      {
+         WdList.forEach((wd, index) =>
+         {
+              let c_Code = WdListRegExp[index];
+              if(c_Code.test(cls))
+              {
+                  DebugLogging("checkWd(class):resultcnt++ "+ cls + ", " + c_Code);
+                  wdFlg = true;
+              }
+              c_Code.lastIndex = 0;
+              if(wdFlg) return;
+             wdFlg = false;
+         });
+      });
+      if(wdFlg)
+      {
+          targetelement.remove();
+          return;
+      }
+  }
+  if(targetelement?.id)
+  {
+      WdList.forEach((wd, index) =>
+      {
+          let c_Code = WdListRegExp[index];
+          if(c_Code.test(targetelement?.id))
+          {
+              DebugLogging("checkWd(id):resultcnt++ "+ wd + ", " + c_Code);
+              wdFlg = true;
+          }
+          c_Code.lastIndex = 0;
+          if(wdFlg) return;
+          wdFlg = false;
+      });
+      if(wdFlg)
+      {
+          targetelement.remove();
+          return;
+      }
+  }
+
   let deleted = false;
   // 画像・テキスト処理
   targetelement.childNodes.forEach(childNode =>
@@ -274,9 +323,7 @@ function processElement(targetelement, splittedCurrentDomain)
 
     if(img || href || title || text)
     {
-        DebugLogging("removed parent element(Processed 1):"+ targetelement);
-        processedElement.add(childNode);
-        return
+        DebugLogging("processed parent element(Processed 1):"+ childNode);
     }
   });
 
@@ -304,10 +351,7 @@ function processElement(targetelement, splittedCurrentDomain)
 
   if(img || href || title || text)
   {
-      DebugLogging("removed parent element(Processed 1):"+ targetelement);
-      targetelement.src = '';
-      processedElement.add(targetelement);
-      return;
+      DebugLogging("processed parent element(Processed 1):"+ targetelement);
   }
 
   // iframe要素の場合
@@ -316,7 +360,7 @@ function processElement(targetelement, splittedCurrentDomain)
     if(!targetelement.src)
     {
       DebugLogging("removed unknown domain IFRAME");
-      targetelement.src = '';
+      removeDiv(targetelement);
       processedElement.add(targetelement);
     }
     else if(!URL?.canParse(targetelement.src))
@@ -329,7 +373,7 @@ function processElement(targetelement, splittedCurrentDomain)
       if (checkDomain(iframeDomain, splittedCurrentDomain))
       {
         DebugLogging("removed IFRAME(Processed 2):"+ iframeDomain);
-        targetelement.src = '';
+        removeDiv(targetelement);
         processedElement.add(targetelement);
       }
     }
@@ -341,7 +385,7 @@ function processElement(targetelement, splittedCurrentDomain)
     if(!targetelement.src)
     {
       DebugLogging("removed unknown domain IMG");
-      targetelement.style.filter = Fl;
+      removeDiv(targetelement);
       processedElement.add(targetelement);
     }
     else if(!URL?.canParse(targetelement.src))
@@ -354,7 +398,8 @@ function processElement(targetelement, splittedCurrentDomain)
       if (checkDomain(iframeDomain, splittedCurrentDomain))
       {
         DebugLogging("removed IMG(Processed 2):"+ iframeDomain);
-        targetelement.style.filter = Fl;
+        targetelement.style.filter = Flpage;
+        removeDiv(targetelement);
         processedElement.add(targetelement);
       }
     }
@@ -370,7 +415,7 @@ function processElement(targetelement, splittedCurrentDomain)
     if(!URL?.canParse(targetelement.src))
     {
       DebugLogging("removed(Processed 2) " + targetelement.tagName + ", CANNOT PARSE URL:"+ targetelement.src);
-      targetelement.src = '';
+      removeDiv(targetelement);
       processedElement.add(targetelement);
     }
     else
@@ -379,7 +424,7 @@ function processElement(targetelement, splittedCurrentDomain)
       if (checkDomain(elementDomain, splittedCurrentDomain))
       {
         DebugLogging("removed OTHER(Processed 2):"+ elementDomain);
-        targetelement.src = '';
+        removeDiv(targetelement);
         processedElement.add(targetelement);
       }
     }
@@ -411,9 +456,9 @@ function processElement2(targetelement, splittedCurrentDomain)
 
     if(img || href || title || text)
     {
-        DebugLogging("removed element(Processed 1):"+ childNode);
-        targetelement.src = '';
+        DebugLogging("processed parent element(Processed 1):"+ targetelement);
         processedElement.add(childNode);
+        return
     }
   });
 
@@ -451,67 +496,12 @@ function checkDomain(elementDomain, splittedCurrentDomain)
   });
 }
 
-// 分割合致2
-function checkWd(element)
+// 要素の削除
+function removeDiv(element)
 {
-    let classCmp = false;
-    if(element?.classList)
-    {
-       classCmp = WdList.some((wd, index) =>
-       {
-           let resultCnt = 0;
-           element.classList.forEach(cls =>
-           {
-
-               let c_Code = WdListRegExp[index];
-               if(c_Code.test(cls))
-               {
-                   DebugLogging("checkWd(class):resultcnt++"+ cls);
-                   resultCnt++;
-                   c_Code.lastIndex = 0;
-                   return;
-               }
-               c_Code.lastIndex = 0;
-           });
-           return resultCnt > 0;
-       });
-    }
-    if(classCmp) return true;
-
-    let idCmp = false;
-    if(element?.id)
-    {
-        idCmp = WdList.some((wd, index) =>
-        {
-
-            let c_Code = WdListRegExp[index];
-            c_Code.test(element.id);
-            c_Code.lastIndex = 0;
-        });
-    }
-    if(idCmp)
-    {
-        DebugLogging("checkWd(id):resultcnt++"+ element?.id);
-        return true;
-    }
-
-    let textCmp = false;
-    if(element?.textContent)
-    {
-        textCmp = WdList.some((wd, index) =>
-        {
-            let c_Code = WdListRegExp[index];
-            c_Code.test(element.textContent)
-            c_Code.lastIndex = 0;
-        });
-    }
-    if(textCmp)
-    {
-        DebugLogging("checkWd(text):resultcnt++"+ element?.textContent);
-        return true;
-    }
-
-    return false;
+  if(!element)return;
+  element.remove();
+  return;
 }
 
 // 処理関数
